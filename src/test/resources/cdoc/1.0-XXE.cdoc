@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE lolz [
+ <!ENTITY lol "lol">
+ <!ELEMENT lolz (#PCDATA)>
+ <!ENTITY lol1 "&lol;&lol;&lol;">
+ <!ENTITY lol2 "&lol1;&lol1;&lol1;">
+ <!ENTITY lol3 "&lol2;&lol2;&lol2;">
+ <!ENTITY lol4 "&lol3;&lol3;&lol3;">
+ <!ENTITY lol5 "&lol4;&lol4;&lol4;">
+ <!ENTITY lol6 "&lol5;&lol5;&lol5;">
+ <!ENTITY lol7 "&lol6;&lol6;&lol6;">
+ <!ENTITY lol8 "&lol7;&lol7;&lol7;">
+ <!ENTITY lol9 "&lol8;&lol8;&lol8;">
+]>
+<denc:EncryptedData xmlns:denc="http://www.w3.org/2001/04/xmlenc#" MimeType="application/octet-stream">
+    <denc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
+    <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <denc:EncryptedKey Recipient="MÄNNIK,MARI-LIIS,47101010033,ID-CARD">
+            <denc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-1_5"/>
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>MIIFQTCCBCmgAwIBAgIQZfbpUkCzPe9TGdEq3ScYzjANBgkqhkiG9w0BAQUFADBs
+MQswCQYDVQQGEwJFRTEiMCAGA1UECgwZQVMgU2VydGlmaXRzZWVyaW1pc2tlc2t1
+czEfMB0GA1UEAwwWVEVTVCBvZiBFU1RFSUQtU0sgMjAxMTEYMBYGCSqGSIb3DQEJ
+ARYJcGtpQHNrLmVlMB4XDTE0MDMwNzE0MDExNFoXDTE5MDMwNjIxNTk1OVowgZsx
+CzAJBgNVBAYTAkVFMQ8wDQYDVQQKDAZFU1RFSUQxFzAVBgNVBAsMDmF1dGhlbnRp
+Y2F0aW9uMSYwJAYDVQQDDB1Nw4ROTklLLE1BUkktTElJUyw0NzEwMTAxMDAzMzEQ
+MA4GA1UEBAwHTcOETk5JSzESMBAGA1UEKgwJTUFSSS1MSUlTMRQwEgYDVQQFEws0
+NzEwMTAxMDAzMzCCASEwDQYJKoZIhvcNAQEBBQADggEOADCCAQkCggEAj2IADArg
+yyFypmMz/gwPb1jfyIgis0VHrjbeBxUByvvhanQpasluTVXtsctU3ASiO25iuV/k
+uTGCDd06DaV1tmbrzA08Q/C36+Zz9uE68hEmeV7JIQbqcHxM3rl6bMrPTFulqFjJ
+AqWdI8iz08acdDJ/V0UCMKYZ5t2pU+lRQNwgP9gDvFbfMCm/UEj0NZqh7fsUIBOR
+PHFRKfpd5Wo4lkR4McWDQJ0KDpXf3rXJQO8+K/S1w65qOMEZIJpSTtdTxKqRVbkN
+8/OapQ7/kjhqUDgzNzJ4drG0qj69WZbT/u61SnjcmZJwgG1urwFelnNZy6wcnEY6
+TvM+J3dLP6MAzQIDAQABo4IBrjCCAaowCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMC
+BLAwgZkGA1UdIASBkTCBjjCBiwYKKwYBBAHOHwMBATB9MFgGCCsGAQUFBwICMEwe
+SgBBAGkAbgB1AGwAdAAgAHQAZQBzAHQAaQBtAGkAcwBlAGsAcwAuACAATwBuAGwA
+eQAgAGYAbwByACAAdABlAHMAdABpAG4AZwAuMCEGCCsGAQUFBwIBFhVodHRwOi8v
+d3d3LnNrLmVlL2Nwcy8wJAYDVR0RBB0wG4EZbWFyaS1saWlzLm1hbm5pa0BlZXN0
+aS5lZTAdBgNVHQ4EFgQUqW4nBPAliogRUjgrwQJphJQmRMYwIAYDVR0lAQH/BBYw
+FAYIKwYBBQUHAwIGCCsGAQUFBwMEMCIGCCsGAQUFBwEDBBYwFDAIBgYEAI5GAQEw
+CAYGBACORgEEMB8GA1UdIwQYMBaAFEG2/sWxsbRTE4z6+mLQNG1tIjQKMEUGA1Ud
+HwQ+MDwwOqA4oDaGNGh0dHA6Ly93d3cuc2suZWUvcmVwb3NpdG9yeS9jcmxzL3Rl
+c3RfZXN0ZWlkMjAxMS5jcmwwDQYJKoZIhvcNAQEFBQADggEBAAPM0VAmntQKijXi
+pYs3ywJjVdXCM7y55i/R1RUK1zIe/NgaLLIXQlKKgaI1cfo+3Q038banksQelWiX
+wR7bUWRvsPZgHuG/XwgWaTpb2t5F7BzulNitMghL/hePp/DWXHT1w1nDtFxN6MN6
+tGMW+JXU3jRgbJfiMEjLxBULBFpIhys3uKKbYSRfEZgab+nQJjaYws9TUofraOcG
+tNG0Avb+v7eLZu7kg0oBuxzUAHN3yviDKO3ea8htgyO4tUv3w/Fz+yLvOLwDxGih
+PFJp+d1hWNkDlznxASszsXM2t/9ebyybaHBc4yxEulcL1AvyvWfXqATozInoOWNq
+Q+8l1QM=
+</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+            <denc:CipherData>
+                <denc:CipherValue>G5hlDmVI5dQ6wiJnxEceTaX3zC0kMzX0jAhX3ebRImZ91owoeQD4ykzYPDBuMgND
+PkaR2jzRBVAxM9LpkBNVhLqKCzV9F7fVyqLSnhuKEAs9H3zKr29+ZR/Cewien/Yb
+TohFXwYCs7gct0/FJT/S7p/k6ZICV+kmCqcyAKvOmQk0QCDTqm63T/47i92Wm30P
+GpizC6X+8YcmHOWDOQvta1iM9ExddtBa50r4k/PTgbQrFEl/kE1Ze2N61AiRus9f
+Wrki43UhIObXYuX29PWeyzNvazve3CgnYvy2QWQbz73AtwvEAkc7+YyHgd9o5Glq
+/mT19FBzUcQMJFldCGrtpA==
+</denc:CipherValue>
+            </denc:CipherData>
+        </denc:EncryptedKey>
+    </ds:KeyInfo>
+    <denc:CipherData>
+        <denc:CipherValue>HVZISsT4921GGsL0pvbFZPc4Z2S3mOUSgQhsv9EQlYldqOmcKRf14lmMwWu2m5Bl
+</denc:CipherValue>
+    </denc:CipherData>
+    <denc:EncryptionProperties>
+        <denc:EncryptionProperty Name="DocumentFormat">ENCDOC-XML|1.0</denc:EncryptionProperty>
+        <denc:EncryptionProperty Name="LibraryVersion">qdigidocclient|3.13.4.1515</denc:EncryptionProperty>
+        <denc:EncryptionProperty Name="Filename">&lol9;</denc:EncryptionProperty>
+        <denc:EncryptionProperty Name="orig_file">test.txt|4|application/octet-stream|D0</denc:EncryptionProperty>
+    </denc:EncryptionProperties>
+</denc:EncryptedData>
