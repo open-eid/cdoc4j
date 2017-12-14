@@ -176,7 +176,7 @@ public class CDOCDecrypterTest {
                 .build();
 
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPkcs11("/usr/local/lib/opensc-pkcs11.so", 0, "DO NOT COMMIT YOUR PIN!")
+                .withPkcs11("/usr/local/lib/onepin-opensc-pkcs11.so", 0, "DO NOT COMMIT YOUR PIN!")
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());
