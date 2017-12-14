@@ -1,11 +1,12 @@
 package org.cdoc4j;
 
 import org.cdoc4j.xml.exception.XmlParseException;
-import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -134,25 +135,25 @@ public class CDOCDecrypterTest {
 
     @Test
     public void buildAndDecryptCDOC11_withECKeysAndMultipleDataFiles_shouldSucceed() throws Exception {
-        DataFile dataFile = new DataFile("test.txt", "test CDOC 1.1 with EC keys ".getBytes());
-        DataFile dataFile2 = new DataFile("test2.txt", "test CDOC 1.1 vol. 2".getBytes());
+        List<DataFile> dataFiles = new ArrayList<>();
+        dataFiles.add(new DataFile("test.txt", "test CDOC 1.1 with EC keys ".getBytes()));
+        dataFiles.add(new DataFile("test2.txt", "test CDOC 1.1 vol. 2".getBytes()));
 
         InputStream certificateInputStream = CDOC10BuilderTest.class.getResourceAsStream("/ecc/auth_cert.pem");
         byte[] cdoc = CDOCBuilder.version("1.1")
-                .withDataFile(dataFile)
-                .withDataFile(dataFile2)
+                .withDataFiles(dataFiles)
                 .withRecipient(certificateInputStream)
                 .build();
 
-        List<DataFile> dataFiles = new CDOCDecrypter()
+        List<DataFile> decryptedDataFiles = new CDOCDecrypter()
                 .withPrivateKey(CDOC10BuilderTest.class.getResourceAsStream("/ecc/auth_priv_key.pem"))
                 .decrypt(new ByteArrayInputStream(cdoc));
 
-        assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());
-        assertArrayEquals(dataFile.getContent(), dataFiles.get(0).getContent());
+        assertEquals(dataFiles.get(0).getFileName(), decryptedDataFiles.get(0).getFileName());
+        assertArrayEquals(dataFiles.get(0).getContent(), decryptedDataFiles.get(0).getContent());
 
-        assertEquals(dataFile2.getFileName(), dataFiles.get(1).getFileName());
-        assertArrayEquals(dataFile2.getContent(), dataFiles.get(1).getContent());
+        assertEquals(dataFiles.get(1).getFileName(), decryptedDataFiles.get(1).getFileName());
+        assertArrayEquals(dataFiles.get(1).getContent(), decryptedDataFiles.get(1).getContent());
     }
 
     @Test(expected = XmlParseException.class)

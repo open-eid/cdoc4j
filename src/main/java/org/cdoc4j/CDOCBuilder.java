@@ -59,6 +59,13 @@ public abstract class CDOCBuilder {
         return withDataFile(path);
     }
 
+    public CDOCBuilder withDataFiles(List<DataFile> dataFiles) {
+        for (DataFile dataFile : dataFiles) {
+            withDataFile(dataFile);
+        }
+        return this;
+    }
+
     public CDOCBuilder withRecipient(X509Certificate certificate) throws RecipientCertificateException {
         validateRecipientCertificate(certificate);
         recipients.add(certificate);
@@ -69,12 +76,20 @@ public abstract class CDOCBuilder {
         try {
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
             X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(inputStream);
+            inputStream.close();
             return withRecipient(certificate);
-        } catch (CertificateException e) {
+        } catch (CertificateException | IOException e) {
             String message = "Error reading certificate from input stream!";
             LOGGER.error(message, e);
             throw new RecipientCertificateException(message, e);
         }
+    }
+
+    public CDOCBuilder withRecipients(List<X509Certificate> certificates) throws RecipientCertificateException {
+        for (X509Certificate certificate : certificates) {
+            withRecipient(certificate);
+        }
+        return this;
     }
 
     public void buildToOutputStream(OutputStream outputStream) throws Exception {

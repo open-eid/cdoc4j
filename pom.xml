@@ -8,7 +8,8 @@
     <artifactId>cdoc4j</artifactId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
-
+    <name>Java library for handling CDOC documents</name>
+    
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <bouncycastle.version>1.54</bouncycastle.version>
