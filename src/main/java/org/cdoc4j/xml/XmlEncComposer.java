@@ -25,6 +25,7 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -34,8 +35,8 @@ public class XmlEncComposer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XmlEncComposer.class);
 
+    protected static final String ENCODING = "UTF-8";
     protected static final String MIMETYPE_DDOC = "http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd";
-
     protected static final String ENCDOC_XML_VERSION = "ENCDOC-XML|1.0";
 
     protected Document document;
@@ -204,14 +205,15 @@ public class XmlEncComposer {
         try {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.ENCODING, ENCODING);
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             DOMSource source = new DOMSource(node);
             StringWriter strWriter = new StringWriter();
             StreamResult result = new StreamResult(strWriter);
             transformer.transform(source, result);
-            return strWriter.getBuffer().toString().getBytes();
-        } catch (TransformerException e) {
+            return strWriter.getBuffer().toString().getBytes(ENCODING);
+        } catch (TransformerException | UnsupportedEncodingException e) {
             String message = "Error transforming XML!";
             LOGGER.error(message, e);
             throw new XmlTransformException(message, e);
