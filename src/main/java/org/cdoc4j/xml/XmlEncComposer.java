@@ -36,7 +36,7 @@ public class XmlEncComposer {
     private static final Logger LOGGER = LoggerFactory.getLogger(XmlEncComposer.class);
 
     protected static final String ENCODING = "UTF-8";
-    protected static final String MIMETYPE_DDOC = "http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd";
+    protected static final String MIMETYPE_DDOC = "http://www.sk.ee/DigiDoc/v1.3.0#";
     protected static final String ENCDOC_XML_VERSION = "ENCDOC-XML|1.0";
 
     protected Document document;
@@ -156,10 +156,12 @@ public class XmlEncComposer {
         int i = 0;
         for (DataFile dataFile : dataFiles) {
             Element datafile = doc.createElement("DataFile");
+            datafile.setAttribute("ContentType", "EMBEDDED_BASE64");
             datafile.setAttribute("Filename", dataFile.getFileName());
             datafile.setAttribute("MimeType", "application/octet-stream");
             datafile.setAttribute("Size", String.valueOf(dataFile.getContent().length));
             datafile.setAttribute("Id", "D" + i++);
+            datafile.setAttribute("xmlns", MIMETYPE_DDOC);
             datafile.setTextContent(Base64.encodeBase64String(dataFile.getContent()));
             signedDoc.appendChild(datafile);
         }
