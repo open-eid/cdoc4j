@@ -21,13 +21,14 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class XmlEncParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XmlEncParser.class);
 
-    private static final String MIMETYPE_DDOC = "http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd";
+    private static final List<String> DDOC_MIMETYPES = Arrays.asList("http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd", "http://www.sk.ee/DigiDoc/v1.3.0#");
 
     protected Document document;
 
@@ -85,7 +86,7 @@ public class XmlEncParser {
         try {
             XPathExpression expression = xPath.compile("/EncryptedData");
             Node encryptedData = (Node) expression.evaluate(document, XPathConstants.NODE);
-            return MIMETYPE_DDOC.equals(encryptedData.getAttributes().getNamedItem("MimeType").getTextContent());
+            return DDOC_MIMETYPES.contains(encryptedData.getAttributes().getNamedItem("MimeType").getTextContent());
         } catch (XPathExpressionException e) {
             String message = "Error parsing recipient(s) data from CDOC!";
             LOGGER.error(message, e);
