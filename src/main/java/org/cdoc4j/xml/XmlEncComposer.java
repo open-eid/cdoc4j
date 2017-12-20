@@ -36,7 +36,7 @@ public class XmlEncComposer {
     private static final Logger LOGGER = LoggerFactory.getLogger(XmlEncComposer.class);
 
     protected static final String ENCODING = "UTF-8";
-    protected static final String MIMETYPE_DDOC = "http://www.sk.ee/DigiDoc/v1.3.0#";
+    protected static final String DDOC_MIMETYPE = "http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd";
     protected static final String ENCDOC_XML_VERSION = "ENCDOC-XML|1.0";
 
     protected Document document;
@@ -56,7 +56,7 @@ public class XmlEncComposer {
         Element encryptedData = document.createElement("denc:EncryptedData");
         encryptedData.setAttribute("xmlns:denc", "http://www.w3.org/2001/04/xmlenc#");
         if (dataFilesSize > 1) {
-            encryptedData.setAttribute("MimeType", MIMETYPE_DDOC);
+            encryptedData.setAttribute("MimeType", DDOC_MIMETYPE);
         } else {
             encryptedData.setAttribute("MimeType", "application/octet-stream");
         }
@@ -147,9 +147,10 @@ public class XmlEncComposer {
     }
 
     public byte[] constructDataFilesXml(List<DataFile> dataFiles) throws CDOCException {
+        String xmlns = "http://www.sk.ee/DigiDoc/v1.3.0#";
         Document doc = XMLDocumentBuilder.createDocument();
         Element signedDoc = doc.createElement("SignedDoc");
-        signedDoc.setAttribute("xmlns", MIMETYPE_DDOC);
+        signedDoc.setAttribute("xmlns", xmlns);
         signedDoc.setAttribute("format", "DIGIDOC-XML");
         signedDoc.setAttribute("version", "1.3");
 
@@ -161,7 +162,7 @@ public class XmlEncComposer {
             datafile.setAttribute("MimeType", "application/octet-stream");
             datafile.setAttribute("Size", String.valueOf(dataFile.getContent().length));
             datafile.setAttribute("Id", "D" + i++);
-            datafile.setAttribute("xmlns", MIMETYPE_DDOC);
+            datafile.setAttribute("xmlns", xmlns);
             datafile.setTextContent(Base64.encodeBase64String(dataFile.getContent()));
             signedDoc.appendChild(datafile);
         }

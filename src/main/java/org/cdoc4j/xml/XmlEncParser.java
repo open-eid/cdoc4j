@@ -28,7 +28,7 @@ public class XmlEncParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XmlEncParser.class);
 
-    private static final List<String> DDOC_MIMETYPES = Arrays.asList("http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd", "http://www.sk.ee/DigiDoc/v1.3.0#");
+    private static final String DDOC_MIMETYPE = "http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd";
 
     protected Document document;
 
@@ -86,7 +86,7 @@ public class XmlEncParser {
         try {
             XPathExpression expression = xPath.compile("/EncryptedData");
             Node encryptedData = (Node) expression.evaluate(document, XPathConstants.NODE);
-            return DDOC_MIMETYPES.contains(encryptedData.getAttributes().getNamedItem("MimeType").getTextContent());
+            return DDOC_MIMETYPE.equals(encryptedData.getAttributes().getNamedItem("MimeType").getTextContent());
         } catch (XPathExpressionException e) {
             String message = "Error parsing recipient(s) data from CDOC!";
             LOGGER.error(message, e);
