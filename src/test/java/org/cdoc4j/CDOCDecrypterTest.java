@@ -165,7 +165,7 @@ public class CDOCDecrypterTest {
                 .decrypt(cdocInputStream);
     }
 
-    @Ignore("Requires SmartCard and its Reader to be connected to the machine")
+    @Ignore("Requires SmartCard with its Reader to be connected to the machine")
     @Test
     public void buildAndDecryptCDOC_withPKCS11_shouldSucceed() throws Exception {
         DataFile dataFile = new DataFile("test.txt", "test CDOC 1.1 with PKCS11 ".getBytes());
@@ -177,7 +177,7 @@ public class CDOCDecrypterTest {
                 .build();
 
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPkcs11("/usr/local/lib/onepin-opensc-pkcs11.so", 0, "DO NOT COMMIT YOUR PIN!")
+                .withPkcs11("/usr/local/lib/onepin-opensc-pkcs11.so", "DO NOT COMMIT YOUR PIN!", 0)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());

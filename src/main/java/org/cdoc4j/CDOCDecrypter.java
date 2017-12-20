@@ -6,12 +6,11 @@ import org.cdoc4j.exception.DecryptionException;
 import org.cdoc4j.exception.PrivateKeyMissingException;
 import org.cdoc4j.exception.RecipientCertificateException;
 import org.cdoc4j.exception.RecipientMissingException;
+import org.cdoc4j.pkcs11.PKCS11Token;
 import org.cdoc4j.xml.DDOCParser;
 import org.cdoc4j.xml.XMLDocumentBuilder;
 import org.cdoc4j.xml.XmlEncParser;
 import org.cdoc4j.xml.XmlEncParserFactory;
-import eu.europa.esig.dss.token.KSPrivateKeyEntry;
-import eu.europa.esig.dss.token.Pkcs11SignatureToken;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
@@ -33,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.Certificate;
@@ -51,6 +51,8 @@ public class CDOCDecrypter {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CDOCDecrypter.class);
+
+    private PKCS11TokenParams pkcs11Params;
 
     private PrivateKey privateKey;
 
@@ -78,12 +80,21 @@ public class CDOCDecrypter {
         return this;
     }
 
-    public CDOCDecrypter withPkcs11(String pkcs11Path, long slot, String pin) throws CDOCException {
-        initPkcs11(pkcs11Path, slot, pin);
+    public CDOCDecrypter withPkcs11(PKCS11TokenParams params) throws CDOCException {
+        pkcs11Params = params;
+        return this;
+    }
+
+    public CDOCDecrypter withPkcs11(String pkcs11Path, String pin, int slot) throws CDOCException {
+        pkcs11Params = new PKCS11TokenParams(pkcs11Path, pin, slot);
         return this;
     }
 
     public List<DataFile> decrypt(InputStream cdocInputStream) throws CDOCException {
+        PKCS11Token token = null;
+        if (pkcs11Params != null) {
+            token = initPkcs11(pkcs11Params);
+        }
         if (privateKey == null) {
             throw new PrivateKeyMissingException("Private key not set!");
         }
@@ -98,6 +109,10 @@ public class CDOCDecrypter {
 
         SecretKey key = decryptKey(recipient, privateKey);
         byte[] decryptedPayload = decryptPayload(encryptionMethod, encryptedPayload, key);
+
+        if (token != null) {
+            token.removeProvider();
+        }
 
         if (cdocparser.encryptedPayloadIsDDOC()) {
             DDOCParser ddocParser = new DDOCParser(decryptedPayload);
@@ -148,12 +163,13 @@ public class CDOCDecrypter {
         }
     }
 
-    private void initPkcs11(String pkcs11Path, long slot, String pin) throws CDOCException {
+    private PKCS11Token initPkcs11(PKCS11TokenParams params) throws CDOCException {
         try {
-            Pkcs11SignatureToken signatureToken = new Pkcs11SignatureToken(pkcs11Path, pin.toCharArray(), (int) slot);
-            KSPrivateKeyEntry privateKeyEntry = (KSPrivateKeyEntry) signatureToken.getKeys().get(0);
-            certificate = privateKeyEntry.getCertificate().getCertificate();
+            PKCS11Token token = new PKCS11Token(params.getPkcs11Path(), params.getPin().toCharArray(), params.getSlot());
+            KeyStore.PrivateKeyEntry privateKeyEntry = token.getKeys().get(0);
+            certificate = privateKeyEntry.getCertificate();
             privateKey = privateKeyEntry.getPrivateKey();
+            return token;
         } catch (Exception e) {
             String message = "Error with PKCS11!";
             LOGGER.error(message, e);
@@ -233,4 +249,4 @@ public class CDOCDecrypter {
         }
     }
 
-} 
+}
