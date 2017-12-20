@@ -147,10 +147,9 @@ public class XmlEncComposer {
     }
 
     public byte[] constructDataFilesXml(List<DataFile> dataFiles) throws CDOCException {
-        String xmlns = "http://www.sk.ee/DigiDoc/v1.3.0#";
         Document doc = XMLDocumentBuilder.createDocument();
         Element signedDoc = doc.createElement("SignedDoc");
-        signedDoc.setAttribute("xmlns", xmlns);
+        signedDoc.setAttribute("xmlns", "http://www.sk.ee/DigiDoc/v1.3.0#");
         signedDoc.setAttribute("format", "DIGIDOC-XML");
         signedDoc.setAttribute("version", "1.3");
 
@@ -162,7 +161,6 @@ public class XmlEncComposer {
             datafile.setAttribute("MimeType", "application/octet-stream");
             datafile.setAttribute("Size", String.valueOf(dataFile.getContent().length));
             datafile.setAttribute("Id", "D" + i++);
-            datafile.setAttribute("xmlns", xmlns);
             datafile.setTextContent(Base64.encodeBase64String(dataFile.getContent()));
             signedDoc.appendChild(datafile);
         }
