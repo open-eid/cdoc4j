@@ -48,7 +48,7 @@ public class XmlEnc11Parser extends XmlEncParser {
             } else if (algorithm.equals("http://www.w3.org/2001/04/xmlenc#kw-aes256")) {
                 return getECRecipient(recipientNode);
             } else {
-                String message = "Recipient has unknown encryption method algorithm: " + algorithm;
+                String message = "Recipient has an unknown encryption method algorithm: " + algorithm;
                 LOGGER.error(message);
                 throw new XmlParseException(message);
             }

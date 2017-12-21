@@ -91,6 +91,7 @@ public class CDOCDecrypter {
     }
 
     public List<DataFile> decrypt(InputStream cdocInputStream) throws CDOCException {
+        LOGGER.info("Start decrypting payload from CDOC");
         PKCS11Token token = null;
         if (pkcs11Params != null) {
             token = initPkcs11(pkcs11Params);
@@ -114,14 +115,19 @@ public class CDOCDecrypter {
             token.removeProvider();
         }
 
+        List<DataFile> dataFiles;
         if (cdocparser.encryptedPayloadIsDDOC()) {
+            LOGGER.debug("Encrypted payload is DDOC, decrypting..");
             DDOCParser ddocParser = new DDOCParser(decryptedPayload);
-            return ddocParser.getDataFiles();
+            dataFiles = ddocParser.getDataFiles();
         } else {
+            LOGGER.debug("Encrypted payload is a single file, decrypting..");
             String fileName = cdocparser.getOriginalFileName();
             DataFile dataFile = new DataFile(fileName, decryptedPayload);
-            return new ArrayList<>(Collections.singletonList(dataFile));
+            dataFiles = new ArrayList<>(Collections.singletonList(dataFile));
         }
+        LOGGER.info("Payload decryption completed successfully!");
+        return dataFiles;
     }
 
     private Recipient chooseRecipient(List<Recipient> recipients) throws RecipientMissingException, RecipientCertificateException {
@@ -165,13 +171,15 @@ public class CDOCDecrypter {
 
     private PKCS11Token initPkcs11(PKCS11TokenParams params) throws CDOCException {
         try {
+            LOGGER.debug("Initializing PKCS#11");
             PKCS11Token token = new PKCS11Token(params.getPkcs11Path(), params.getPin().toCharArray(), params.getSlot());
             KeyStore.PrivateKeyEntry privateKeyEntry = token.getKeys().get(0);
             certificate = privateKeyEntry.getCertificate();
             privateKey = privateKeyEntry.getPrivateKey();
+            LOGGER.debug("PKCS#11 initialized successfully!");
             return token;
         } catch (Exception e) {
-            String message = "Error with PKCS11!";
+            String message = "Error initializing PKCS#11!";
             LOGGER.error(message, e);
             throw new CDOCException(message, e);
         }

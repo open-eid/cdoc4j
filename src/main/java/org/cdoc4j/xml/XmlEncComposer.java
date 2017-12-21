@@ -56,6 +56,7 @@ public class XmlEncComposer {
         Element encryptedData = document.createElement("denc:EncryptedData");
         encryptedData.setAttribute("xmlns:denc", "http://www.w3.org/2001/04/xmlenc#");
         if (dataFilesSize > 1) {
+            LOGGER.debug("Multiple data files set - setting MimeType to: \"" + DDOC_MIMETYPE + "\"");
             encryptedData.setAttribute("MimeType", DDOC_MIMETYPE);
         } else {
             encryptedData.setAttribute("MimeType", "application/octet-stream");
@@ -123,6 +124,7 @@ public class XmlEncComposer {
 
         byte[] dataToEncrypt;
         if (dataFiles.size() > 1) {
+            LOGGER.debug("Multiple data files set - composing data files DDOC..");
             dataToEncrypt = constructDataFilesXml(dataFiles);
         } else {
             dataToEncrypt = dataFiles.get(0).getContent();

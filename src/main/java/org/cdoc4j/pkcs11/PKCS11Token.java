@@ -1,5 +1,6 @@
 package org.cdoc4j.pkcs11;
 
+import org.cdoc4j.pkcs11.exception.IncorrectPinException;
 import org.cdoc4j.pkcs11.exception.PKCS11Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,9 +151,9 @@ public class PKCS11Token {
             } catch (Exception e) {
                 if (e instanceof sun.security.pkcs11.wrapper.PKCS11Exception) {
                     if ("CKR_PIN_INCORRECT".equals(e.getMessage())) {
-                        String message = "Bad password for PKCS11";
+                        String message = "Incorrect PIN for PKCS#11";
                         LOGGER.error(message, e);
-                        throw new PKCS11Exception(message, e);
+                        throw new IncorrectPinException(message, e);
                     }
                 }
                 String message = "Can't initialize Sun PKCS#11 security provider";

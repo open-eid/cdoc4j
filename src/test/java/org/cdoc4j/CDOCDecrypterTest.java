@@ -168,7 +168,7 @@ public class CDOCDecrypterTest {
     @Ignore("Requires SmartCard with its Reader to be connected to the machine")
     @Test
     public void buildAndDecryptCDOC_withPKCS11_shouldSucceed() throws Exception {
-        DataFile dataFile = new DataFile("test.txt", "test CDOC 1.1 with PKCS11 ".getBytes());
+        DataFile dataFile = new DataFile("test.txt", "test CDOC 1.1 with PKCS#11".getBytes());
 
         InputStream certificateInputStream = null; // set desired certificate
         byte[] cdoc = CDOCBuilder.version("1.1")

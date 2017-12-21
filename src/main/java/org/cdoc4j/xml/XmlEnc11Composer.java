@@ -197,6 +197,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
 
         byte[] dataToEncrypt;
         if (dataFiles.size() > 1) {
+            LOGGER.debug("Multiple data files set - composing data files DDOC..");
             dataToEncrypt = constructDataFilesXml(dataFiles);
         } else {
             dataToEncrypt = dataFiles.get(0).getContent();
