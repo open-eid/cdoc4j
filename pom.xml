@@ -15,14 +15,6 @@
         <bouncycastle.version>1.54</bouncycastle.version>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>cefdigital</id>
-            <name>cefdigital</name>
-            <url>https://ec.europa.eu/cefdigital/artifact/content/repositories/esignaturedss/</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>

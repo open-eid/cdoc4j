@@ -19,6 +19,15 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Abstraction class for building CDOC documents
+ * <p>
+ * Required parameters:
+ * <ul>
+ * <li><b>{@link DataFile}</b> - the file to be encrypted (at least one is mandatory, also supports multiple files)</li>
+ * <li><b>{@link X509Certificate}</b> - recipient a.k.a. receiver (mandatory, also supports multiple recipients)</li>
+ * </ul>
+ */
 public abstract class CDOCBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CDOCBuilder.class);
@@ -29,6 +38,13 @@ public abstract class CDOCBuilder {
     protected List<X509Certificate> recipients = new ArrayList<>();
     protected List<DataFile> dataFiles = new ArrayList<>();
 
+    /**
+     * Constructs an instance of {@link CDOCBuilder} for the desired version of CDOC
+     *
+     * @param version of the desired CDOC
+     * @throws CDOCException when the version input is invalid
+     * @return an instance of {@link CDOCBuilder} for the desired version of CDOC
+     */
     public static CDOCBuilder version(String version) throws CDOCException {
         switch (version) {
             case V1_0:
@@ -39,26 +55,57 @@ public abstract class CDOCBuilder {
         throw new CDOCException("Invalid version: " + version);
     }
 
+    /**
+     * Constructs an instance of {@link CDOCBuilder} for the default version of CDOC
+     *
+     * @return an instance of {@link CDOCBuilder} for the default version of CDOC
+     */
     public static CDOCBuilder defaultVersion() throws CDOCException {
         return version(V1_1);
     }
 
+    /**
+     * Adds data file
+     *
+     * @param dataFile to be encrypted
+     * @return this builder
+     */
     public CDOCBuilder withDataFile(DataFile dataFile) {
         dataFiles.add(dataFile);
         return this;
     }
 
+    /**
+     * Adds data file
+     *
+     * @param path of the file to be encrypted
+     * @throws IOException when there's an error reading file from the given path
+     * @return this builder
+     */
     public CDOCBuilder withDataFile(Path path) throws IOException {
         byte[] data = Files.readAllBytes(path);
         DataFile dataFile = new DataFile(path.getFileName().toString(), data);
         return withDataFile(dataFile);
     }
 
+    /**
+     * Adds data file
+     *
+     * @param file to be encrypted
+     * @throws IOException when there's an error reading the given file
+     * @return this builder
+     */
     public CDOCBuilder withDataFile(File file) throws IOException {
         Path path = file.toPath();
         return withDataFile(path);
     }
 
+    /**
+     * Adds data files
+     *
+     * @param dataFiles of the recipient
+     * @return this builder
+     */
     public CDOCBuilder withDataFiles(List<DataFile> dataFiles) {
         for (DataFile dataFile : dataFiles) {
             withDataFile(dataFile);
@@ -66,12 +113,26 @@ public abstract class CDOCBuilder {
         return this;
     }
 
+    /**
+     * Adds recipient
+     *
+     * @param certificate of the recipient
+     * @throws RecipientCertificateException when the certificate doesn't qualify
+     * @return this builder
+     */
     public CDOCBuilder withRecipient(X509Certificate certificate) throws RecipientCertificateException {
         validateRecipientCertificate(certificate);
         recipients.add(certificate);
         return this;
     }
 
+    /**
+     * Adds recipient
+     *
+     * @param inputStream of the recipient's certificate
+     * @throws RecipientCertificateException when there's an error reading the certificate from input stream or when the certificate doesn't qualify
+     * @return this builder
+     */
     public CDOCBuilder withRecipient(InputStream inputStream) throws RecipientCertificateException {
         try {
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -85,6 +146,13 @@ public abstract class CDOCBuilder {
         }
     }
 
+    /**
+     * Adds recipients
+     *
+     * @param certificates of the recipients
+     * @throws RecipientCertificateException when at least one the certificates doesn't qualify
+     * @return this builder
+     */
     public CDOCBuilder withRecipients(List<X509Certificate> certificates) throws RecipientCertificateException {
         for (X509Certificate certificate : certificates) {
             withRecipient(certificate);
@@ -92,12 +160,25 @@ public abstract class CDOCBuilder {
         return this;
     }
 
-    public void buildToOutputStream(OutputStream outputStream) throws Exception {
+    /**
+     * builds the CDOC to the given output stream
+     *
+     * @param outputStream
+     * @throws CDOCException when there is an error building CDOC
+     * @throws IOException when there is an error writing the CDOC into the given outputstream
+     */
+    public void buildToOutputStream(OutputStream outputStream) throws CDOCException, IOException {
         byte[] cdocBytes = build();
         outputStream.write(cdocBytes);
         outputStream.close();
     }
 
+    /**
+     * builds the CDOC
+     *
+     * @return cdoc content bytes
+     * @throws CDOCException when there is an error building CDOC
+     */
     public abstract byte[] build() throws CDOCException;
 
     protected void validateParameters() throws CDOCException {

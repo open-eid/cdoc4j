@@ -1,6 +1,7 @@
 package org.cdoc4j.xml;
 
 import org.cdoc4j.DataFile;
+import org.cdoc4j.EncryptionMethod;
 import org.cdoc4j.crypto.CertUtil;
 import org.cdoc4j.crypto.CryptUtil;
 import org.cdoc4j.exception.CDOCException;
@@ -41,10 +42,10 @@ public class XmlEncComposer {
 
     protected Document document;
 
-    public byte[] constructXML(String encryptionMethodUri, SecretKey key, List<X509Certificate> recipients, List<DataFile> dataFiles) throws CDOCException {
+    public byte[] constructXML(EncryptionMethod encryptionMethod, SecretKey key, List<X509Certificate> recipients, List<DataFile> dataFiles) throws CDOCException {
         document = XMLDocumentBuilder.createDocument();
         Element root = createEncryptedData(dataFiles.size());
-        root.appendChild(createEncryptionMethod(encryptionMethodUri));
+        root.appendChild(createEncryptionMethod(encryptionMethod.getURI()));
         root.appendChild(createRecipientsKeyInfo(key, recipients));
         root.appendChild(createCipherData(key, dataFiles));
         root.appendChild(createEncryptionProperties(dataFiles));

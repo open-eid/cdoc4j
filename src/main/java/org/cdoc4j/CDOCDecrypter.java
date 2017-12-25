@@ -44,6 +44,21 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Class for decrypting CDOC (1.0 & 1.1) documents
+ * <p>
+ * Required parameters for soft cert usage (a.k.a. for testing purposes):
+ * <ul>
+ * <li><b>{@link PrivateKey}</b> - required for the recipient to decrypt the file(s))</li>
+ * <li><b>{@link X509Certificate}</b> - (only required when the to be encrypted CDOC recipient count is more than one)</li>
+ * </ul>
+ * Required parameters for HSM (Hardware Security Module) usage:
+ * <ul>
+ * <li><b>{@link String}</b> - path to the reachable (and usable) PKCS#11 (proxy) driver from the machine</li>
+ * <li><b>{@link String}</b> - the required PIN to allow to perform the cryptographic operation on the HSM device</li>
+ * <li><b>{@link Integer}</b> - the slot used by the driver to connect to the actual HSM</li>
+ * </ul>
+ */
 public class CDOCDecrypter {
 
     static {
@@ -58,11 +73,24 @@ public class CDOCDecrypter {
 
     private Certificate certificate;
 
-    public CDOCDecrypter asRecipient(X509Certificate certificate) throws RecipientCertificateException {
+    /**
+     * Sets the recipient certificate (for soft cert usage; only required when CDOC contains more than one recipient)
+     *
+     * @param certificate of the recipient
+     * @return the current instance
+     */
+    public CDOCDecrypter asRecipient(X509Certificate certificate) {
         this.certificate = certificate;
         return this;
     }
 
+    /**
+     * Sets the recipient
+     *
+     * @param inputStream of the recipient's certificate (for soft cert usage; only required when CDOC contains more than one recipient)
+     * @throws RecipientCertificateException when there's an error reading the certificate from input stream
+     * @return the current instance
+     */
     public CDOCDecrypter asRecipient(InputStream inputStream) throws RecipientCertificateException {
         try {
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -75,22 +103,61 @@ public class CDOCDecrypter {
         }
     }
 
-    public CDOCDecrypter withPrivateKey(InputStream pemInputStream) throws CDOCException {
-        privateKey = getPrivateKey(pemInputStream);
+    /**
+     * Sets the private key input stream (for soft cert usage)
+     *
+     * @param privateKey of the recipient
+     * @return the current instance
+     */
+    public CDOCDecrypter withPrivateKey(PrivateKey privateKey) {
+        this.privateKey = privateKey;
         return this;
     }
 
-    public CDOCDecrypter withPkcs11(PKCS11TokenParams params) throws CDOCException {
+    /**
+     * Sets the private key input stream (for soft cert usage)
+     *
+     * @param pemInputStream of the recipient's private key
+     * @throws CDOCException when there's an error reading the private key from PEM input stream
+     * @return the current instance
+     */
+    public CDOCDecrypter withPrivateKey(InputStream pemInputStream) throws CDOCException {
+        withPrivateKey(getPrivateKeyFromPEM(pemInputStream));
+        return this;
+    }
+
+    /**
+     * Sets the PKCS#11 input parameters
+     *
+     * @param params for the PKCS#11 usage
+     * @return the current instance
+     */
+    public CDOCDecrypter withPkcs11(PKCS11TokenParams params) {
         pkcs11Params = params;
         return this;
     }
 
-    public CDOCDecrypter withPkcs11(String pkcs11Path, String pin, int slot) throws CDOCException {
+    /**
+     * Sets the PKCS#11 input parameters
+     *
+     * @param pkcs11Path path to the PKCS#11 driver
+     * @param pin of the HSM to perform the cryptographic operation
+     * @param slot used by the driver to connect to the actual HSM
+     * @return the current instance
+     */
+    public CDOCDecrypter withPkcs11(String pkcs11Path, String pin, int slot) {
         pkcs11Params = new PKCS11TokenParams(pkcs11Path, pin, slot);
         return this;
     }
 
-    public List<DataFile> decrypt(InputStream cdocInputStream) throws CDOCException {
+    /**
+     * decrypts the CDOC payload and returns the decrypted file(s)
+     *
+     * @param inputStream of the CDOC document
+     * @throws CDOCException when there's an error decrypting datafile(s) from the given CDOC document
+     * @return decrypted datafile(s)
+     */
+    public List<DataFile> decrypt(InputStream inputStream) throws CDOCException {
         LOGGER.info("Start decrypting payload from CDOC");
         PKCS11Token token = null;
         if (pkcs11Params != null) {
@@ -100,7 +167,7 @@ public class CDOCDecrypter {
             throw new PrivateKeyMissingException("Private key not set!");
         }
 
-        Document document = XMLDocumentBuilder.buildDocument(cdocInputStream);
+        Document document = XMLDocumentBuilder.buildDocument(inputStream);
         XmlEncParser cdocparser = XmlEncParserFactory.getXmlEncParser(document);
 
         Recipient recipient = chooseRecipient(cdocparser.getRecipients());
@@ -151,7 +218,7 @@ public class CDOCDecrypter {
         }
     }
 
-    private PrivateKey getPrivateKey(InputStream pemInputStream) throws CDOCException {
+    private PrivateKey getPrivateKeyFromPEM(InputStream pemInputStream) throws CDOCException {
         try {
             PEMParser pemParser = new PEMParser(new InputStreamReader(pemInputStream));
             Object privateKey = pemParser.readObject();
