@@ -18,6 +18,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
+import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -65,6 +66,9 @@ public class XmlEnc11Parser extends XmlEncParser {
 
             XPathExpression expression = xPath.compile("KeyInfo/AgreementMethod/KeyDerivationMethod/ConcatKDFParams");
             Node concatKDFParams = (Node) expression.evaluate(recipientNode, XPathConstants.NODE);
+            if (concatKDFParams == null) {
+                throw new XmlParseException("Recipient's 'ConcatKDFParams' element not found!");
+            }
             byte algorithmId[] = Hex.decode(concatKDFParams.getAttributes().getNamedItem("AlgorithmID").getTextContent());
             byte partyUInfo[] = Hex.decode(concatKDFParams.getAttributes().getNamedItem("PartyUInfo").getTextContent());
             byte partyVInfo[] = Hex.decode(concatKDFParams.getAttributes().getNamedItem("PartyVInfo").getTextContent());
@@ -78,6 +82,9 @@ public class XmlEnc11Parser extends XmlEncParser {
 
             expression = xPath.compile("KeyInfo/AgreementMethod/OriginatorKeyInfo/KeyValue/ECKeyValue/PublicKey");
             Node publicKey = (Node) expression.evaluate(recipientNode, XPathConstants.NODE);
+            if (publicKey == null) {
+                throw new XmlParseException("Recipient's 'PublicKey' element not found!");
+            }
 
             ECNamedCurveParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec("secp384r1");
             ECParameterSpec secp384r1 = new ECNamedCurveSpec(ecParameterSpec.getName(), ecParameterSpec.getCurve(),
@@ -87,20 +94,29 @@ public class XmlEnc11Parser extends XmlEncParser {
             ECPublicKey ecPublicKey = (ECPublicKey) ecKeyFactory.generatePublic(new ECPublicKeySpec(point, secp384r1));
 
             return new ECRecipient(cn, certificate, encryptedKey, ecPublicKey, algorithmId, partyUInfo, partyVInfo);
-        } catch (Exception e) {
+        } catch (XPathExpressionException | GeneralSecurityException e) {
             String message = "Error parsing recipient data from CDOC!";
             LOGGER.error(message, e);
             throw new XmlParseException(message, e);
         }
     }
 
-    protected X509Certificate extractECCertificate(Node recipientNode) throws XPathExpressionException, CertificateException {
-        XPathExpression expression = xPath.compile("KeyInfo/AgreementMethod/RecipientKeyInfo/X509Data/X509Certificate");
-        Node certificateBase64 = (Node) expression.evaluate(recipientNode, XPathConstants.NODE);
-        byte[] certificateDer = Base64.decodeBase64(certificateBase64.getTextContent());
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new ByteArrayInputStream(certificateDer));
-        return certificate;
+    protected X509Certificate extractECCertificate(Node recipientNode) throws XmlParseException {
+        try {
+            XPathExpression expression = xPath.compile("KeyInfo/AgreementMethod/RecipientKeyInfo/X509Data/X509Certificate");
+            Node certificateBase64 = (Node) expression.evaluate(recipientNode, XPathConstants.NODE);
+            if (certificateBase64 == null) {
+                throw new XmlParseException("Recipient's 'X509Certificate' element not found!");
+            }
+            byte[] certificateDer = Base64.decodeBase64(certificateBase64.getTextContent());
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new ByteArrayInputStream(certificateDer));
+            return certificate;
+        } catch (XPathExpressionException | CertificateException e) {
+            String message = "Error parsing recipient's certificate from CDOC!";
+            LOGGER.error(message, e);
+            throw new XmlParseException(message, e);
+        }
     }
 
 }

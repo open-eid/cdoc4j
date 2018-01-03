@@ -21,7 +21,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class XmlEncParser {
@@ -60,6 +59,9 @@ public class XmlEncParser {
         try {
             XPathExpression expression = xPath.compile("/EncryptedData/CipherData/CipherValue");
             Node cipherValue = (Node) expression.evaluate(document, XPathConstants.NODE);
+            if (cipherValue == null) {
+                throw new XmlParseException("'CipherValue' element (of the encrypted payload) not found!");
+            }
             byte[] encryptedPayload = Base64.decodeBase64(cipherValue.getTextContent());
             return encryptedPayload;
         } catch (XPathExpressionException e) {
@@ -73,6 +75,9 @@ public class XmlEncParser {
         try {
             XPathExpression expression = xPath.compile("/EncryptedData/EncryptionMethod");
             Node encryptionMethod = (Node) expression.evaluate(document, XPathConstants.NODE);
+            if (encryptionMethod == null) {
+                throw new XmlParseException("'EncryptionMethod' element not found!");
+            }
             String encrytionMethodUri = encryptionMethod.getAttributes().getNamedItem("Algorithm").getTextContent();
             return EncryptionMethod.fromURI(encrytionMethodUri);
         } catch (XPathExpressionException e) {
@@ -97,8 +102,11 @@ public class XmlEncParser {
     public String getOriginalFileName() throws XmlParseException {
         try {
             XPathExpression expression = xPath.compile("/EncryptedData/EncryptionProperties/EncryptionProperty[@Name=\"Filename\"]");
-            Node encryptionMethod = (Node) expression.evaluate(document, XPathConstants.NODE);
-            return encryptionMethod.getTextContent();
+            Node fileName = (Node) expression.evaluate(document, XPathConstants.NODE);
+            if (fileName == null) {
+                throw new XmlParseException("'Filename' EncryptionProperty not found!");
+            }
+            return fileName.getTextContent();
         } catch (XPathExpressionException e) {
             String message = "Error parsing encrypted method from CDOC";
             LOGGER.error(message, e);
@@ -107,35 +115,47 @@ public class XmlEncParser {
     }
 
     protected Recipient getRecipient(Node recipientNode) throws XmlParseException {
-        try {
-            String cn = extractCN(recipientNode);
-            X509Certificate certificate = extractCertificate(recipientNode);
-            byte[] encryptedKey = extractEncryptedKey(recipientNode);
-            return new RSARecipient(cn, certificate, encryptedKey);
-        } catch (Exception e) {
-            String message = "Error parsing recipient data from CDOC!";
-            LOGGER.error(message, e);
-            throw new XmlParseException(message, e);
-        }
+        String cn = extractCN(recipientNode);
+        X509Certificate certificate = extractCertificate(recipientNode);
+        byte[] encryptedKey = extractEncryptedKey(recipientNode);
+        return new RSARecipient(cn, certificate, encryptedKey);
     }
 
     protected String extractCN(Node recipientNode) {
         return recipientNode.getAttributes().getNamedItem("Recipient").getTextContent();
     }
 
-    protected X509Certificate extractCertificate(Node recipientNode) throws XPathExpressionException, CertificateException {
-        XPathExpression expression = xPath.compile("KeyInfo/X509Data/X509Certificate");
-        Node certificateBase64 = (Node) expression.evaluate(recipientNode, XPathConstants.NODE);
-        byte[] certificateDer = Base64.decodeBase64(certificateBase64.getTextContent());
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new ByteArrayInputStream(certificateDer));
-        return certificate;
+    protected X509Certificate extractCertificate(Node recipientNode) throws XmlParseException {
+        try {
+            XPathExpression expression = xPath.compile("KeyInfo/X509Data/X509Certificate");
+            Node certificateBase64 = (Node) expression.evaluate(recipientNode, XPathConstants.NODE);
+            if (certificateBase64 == null) {
+                throw new XmlParseException("Recipient's 'X509Certificate' element not found!");
+            }
+            byte[] certificateDer = Base64.decodeBase64(certificateBase64.getTextContent());
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new ByteArrayInputStream(certificateDer));
+            return certificate;
+        } catch (XPathExpressionException | CertificateException e) {
+            String message = "Error parsing recipient's certificate from CDOC!";
+            LOGGER.error(message, e);
+            throw new XmlParseException(message, e);
+        }
     }
 
-    protected byte[] extractEncryptedKey(Node recipientNode) throws XPathExpressionException {
-        XPathExpression expression = xPath.compile("CipherData/CipherValue");
-        Node encryptedKey = (Node) expression.evaluate(recipientNode, XPathConstants.NODE);
-        return Base64.decodeBase64(encryptedKey.getTextContent());
+    protected byte[] extractEncryptedKey(Node recipientNode) throws XmlParseException {
+        try {
+            XPathExpression expression = xPath.compile("CipherData/CipherValue");
+            Node encryptedKey = (Node) expression.evaluate(recipientNode, XPathConstants.NODE);
+            if (encryptedKey == null) {
+                throw new XmlParseException("'CipherValue' element (of the encrypted recipient's key) not found!");
+            }
+            return Base64.decodeBase64(encryptedKey.getTextContent());
+        } catch (XPathExpressionException e) {
+            String message = "Error parsing encrypted key from CDOC!";
+            LOGGER.error(message, e);
+            throw new XmlParseException(message, e);
+        }
     }
 
 } 
