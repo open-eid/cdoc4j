@@ -1,5 +1,5 @@
 # cdoc4j
-Java library for handling CDOC documents.
+Java library for working with CDOC documents.
 
 ## Features
 * Creation of CDOC documents containing encrypted files

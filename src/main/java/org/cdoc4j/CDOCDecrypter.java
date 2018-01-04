@@ -31,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -39,6 +40,10 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECPoint;
+import java.security.spec.EllipticCurve;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -276,6 +281,11 @@ public class CDOCDecrypter {
     }
 
     private SecretKey decryptECKey(ECRecipient recipient, PrivateKey privateKey) throws DecryptionException {
+        if (!isEphemeralPublicKeyValid(recipient.getEphemeralPublicKey())) {
+            String message = "Ephemeral public key does not encode a valid point on the used elliptic curve!";
+            LOGGER.error(message);
+            throw new DecryptionException(message);
+        }
         try {
             KeyAgreement keyAgreement = KeyAgreement.getInstance("ECDH");
             keyAgreement.init(privateKey);
@@ -296,6 +306,36 @@ public class CDOCDecrypter {
             LOGGER.error(message, e);
             throw new DecryptionException(message, e);
         }
+    }
+
+    private boolean isEphemeralPublicKeyValid(ECPublicKey ephemeralPublicKey) {
+        // 1. Verify public key is not a point at infinity
+        if (ECPoint.POINT_INFINITY.equals(ephemeralPublicKey.getW())) {
+            return false;
+        }
+
+        final EllipticCurve ellipticCurve = ephemeralPublicKey.getParams().getCurve();
+        final BigInteger x = ephemeralPublicKey.getW().getAffineX();
+        final BigInteger y = ephemeralPublicKey.getW().getAffineY();
+        final BigInteger p = ((ECFieldFp) ellipticCurve.getField()).getP();
+
+        // 2. Verify x and y are in range [0,p-1]
+        if (x.compareTo(BigInteger.ZERO) < 0 || x.compareTo(p) >= 0
+                || y.compareTo(BigInteger.ZERO) < 0 || y.compareTo(p) >= 0) {
+            return false;
+        }
+
+        final BigInteger a = ellipticCurve.getA();
+        final BigInteger b = ellipticCurve.getB();
+
+        // 3. Verify that y^2 == x^3 + ax + b mod p
+        final BigInteger ySquared = y.modPow(BigInteger.valueOf(2), p);
+        final BigInteger xCubedPlusAXPlusB = x.modPow(BigInteger.valueOf(3), p).add(a.multiply(x)).add(b).mod(p);
+        if (!ySquared.equals(xCubedPlusAXPlusB)) {
+            return false;
+        }
+
+        return true;
     }
 
     private byte[] concatenate(byte[]... bytes) throws IOException {
