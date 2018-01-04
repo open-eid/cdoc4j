@@ -58,6 +58,7 @@ public abstract class CDOCBuilder {
     /**
      * Constructs an instance of {@link CDOCBuilder} for the default version of CDOC
      *
+     * @throws CDOCException
      * @return an instance of {@link CDOCBuilder} for the default version of CDOC
      */
     public static CDOCBuilder defaultVersion() throws CDOCException {
@@ -163,7 +164,7 @@ public abstract class CDOCBuilder {
     /**
      * builds the CDOC to the given output stream
      *
-     * @param outputStream
+     * @param outputStream where the built CDOC content bytes shall be written to
      * @throws CDOCException when there is an error building CDOC
      * @throws IOException when there is an error writing the CDOC into the given outputstream
      */

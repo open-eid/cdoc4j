@@ -50,7 +50,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Class for decrypting CDOC (1.0 & 1.1) documents
+ * Class for decrypting CDOC documents (supports 1.0 and 1.1)
  * <p>
  * Required parameters for soft cert usage (a.k.a. for testing purposes):
  * <ul>
