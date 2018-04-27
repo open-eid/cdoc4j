@@ -29,14 +29,26 @@ public class PKCS11Token {
 
     private int slotIndex;
 
+    private String label;
+
     public PKCS11Token(String pkcs11Path, PrefilledPasswordInputCallback callback, int slotIndex) {
         this.pkcs11Path = pkcs11Path;
         this.callback = callback;
         this.slotIndex = slotIndex;
     }
 
+    public PKCS11Token(String pkcs11Path, PrefilledPasswordInputCallback callback, int slotIndex, String label) {
+        this(pkcs11Path, callback, slotIndex);
+        this.label = label;
+    }
+
     public PKCS11Token(String pkcs11Path, char[] password, int slotIndex) {
         this(pkcs11Path, new PrefilledPasswordInputCallback(password), slotIndex);
+    }
+
+    public PKCS11Token(String pkcs11Path, char[] password, int slotIndex, String label) {
+        this(pkcs11Path, password, slotIndex);
+        this.label = label;
     }
 
     public void removeProvider() {
@@ -52,11 +64,21 @@ public class PKCS11Token {
     public List<KeyStore.PrivateKeyEntry> getKeys() throws PKCS11Exception {
         final List<KeyStore.PrivateKeyEntry> list = new ArrayList<>();
         try {
-            KeyStore keyStore = getKeyStore();
-            final Enumeration<String> aliases = keyStore.aliases();
-            while (aliases.hasMoreElements()) {
-                final String alias = aliases.nextElement();
-                list.add(getKSPrivateKeyEntry(alias, getKeyProtectionParameter()));
+            if (label != null) {
+                KeyStore.PrivateKeyEntry key = getKSPrivateKeyEntry(label, getKeyProtectionParameter());
+                if (key != null) {
+                    list.add(key);
+                }
+            } else {
+                KeyStore keyStore = getKeyStore();
+                final Enumeration<String> aliases = keyStore.aliases();
+                while (aliases.hasMoreElements()) {
+                    final String alias = aliases.nextElement();
+                    KeyStore.PrivateKeyEntry key = getKSPrivateKeyEntry(alias, getKeyProtectionParameter());
+                    if (key != null) {
+                        list.add(key);
+                    }
+                }
             }
         } catch (GeneralSecurityException e) {
             String message = "Unable to retrieve keys from keystore";
@@ -172,8 +194,11 @@ public class PKCS11Token {
         KeyStore keyStore = getKeyStore();
         try {
             if (keyStore.isKeyEntry(alias)) {
-                final KeyStore.PrivateKeyEntry entry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, passwordProtection);
-                return entry;
+                KeyStore.Entry entry = keyStore.getEntry(alias, passwordProtection);
+                if (entry instanceof KeyStore.PrivateKeyEntry) {
+                    final KeyStore.PrivateKeyEntry pkentry = (KeyStore.PrivateKeyEntry) entry;
+                    return pkentry;
+                }
             }
         } catch (GeneralSecurityException e) {
             String message = "Unable to retrieve key for alias '" + alias + "'";

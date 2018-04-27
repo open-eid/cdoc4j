@@ -28,6 +28,9 @@ public class PKCS11Decrypt implements Callable<Void>  {
     @Option(names = {"-s", "--slot"}, description = "slot | Default: 0")
     private int slot;
 
+    @Option(names = {"-l", "--label"}, description = "object label in PKCS11")
+    private String label;
+
     @Option(names = {"-p", "--pin"}, description = "pin", required = true)
     private String pin;
 
@@ -49,7 +52,7 @@ public class PKCS11Decrypt implements Callable<Void>  {
         byte[] cdoc = FileUtils.readFileToByteArray(inputFile);
 
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPkcs11(driver, pin, slot)
+                .withPkcs11(driver, pin, slot, label)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         for (DataFile dataFile : dataFiles) {

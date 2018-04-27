@@ -156,6 +156,20 @@ public class CDOCDecrypter {
     }
 
     /**
+     * Sets the PKCS#11 input parameters
+     *
+     * @param pkcs11Path path to the PKCS#11 driver
+     * @param pin of the HSM to perform the cryptographic operation
+     * @param slot used by the driver to connect to the actual HSM
+     * @param label used by the driver to select correct object
+     * @return the current instance
+     */
+    public CDOCDecrypter withPkcs11(String pkcs11Path, String pin, int slot, String label) {
+        pkcs11Params = new PKCS11TokenParams(pkcs11Path, pin, slot, label);
+        return this;
+    }
+
+    /**
      * decrypts the CDOC payload and returns the decrypted file(s)
      *
      * @param inputStream of the CDOC document
@@ -244,7 +258,7 @@ public class CDOCDecrypter {
     private PKCS11Token initPkcs11(PKCS11TokenParams params) throws CDOCException {
         try {
             LOGGER.debug("Initializing PKCS#11");
-            PKCS11Token token = new PKCS11Token(params.getPkcs11Path(), params.getPin().toCharArray(), params.getSlot());
+            PKCS11Token token = new PKCS11Token(params.getPkcs11Path(), params.getPin().toCharArray(), params.getSlot(), params.getLabel());
             KeyStore.PrivateKeyEntry privateKeyEntry = token.getKeys().get(0);
             certificate = privateKeyEntry.getCertificate();
             privateKey = privateKeyEntry.getPrivateKey();
