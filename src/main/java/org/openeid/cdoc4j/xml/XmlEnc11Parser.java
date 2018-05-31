@@ -1,14 +1,14 @@
 package org.openeid.cdoc4j.xml;
 
-import org.openeid.cdoc4j.ECRecipient;
-import org.openeid.cdoc4j.Recipient;
-import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.util.encoders.Hex;
+import org.openeid.cdoc4j.ECRecipient;
+import org.openeid.cdoc4j.Recipient;
+import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;

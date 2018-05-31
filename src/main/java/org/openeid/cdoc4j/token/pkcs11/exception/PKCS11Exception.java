@@ -1,4 +1,4 @@
-package org.openeid.cdoc4j.pkcs11.exception;
+package org.openeid.cdoc4j.token.pkcs11.exception;
 
 import org.openeid.cdoc4j.exception.CDOCException;
 

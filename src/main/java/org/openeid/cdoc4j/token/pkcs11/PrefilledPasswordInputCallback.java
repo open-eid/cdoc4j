@@ -1,4 +1,4 @@
-package org.openeid.cdoc4j.pkcs11;
+package org.openeid.cdoc4j.token.pkcs11;
 
 public class PrefilledPasswordInputCallback {
 

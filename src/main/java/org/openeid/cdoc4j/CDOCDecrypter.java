@@ -1,45 +1,33 @@
 package org.openeid.cdoc4j;
 
-import org.openeid.cdoc4j.pkcs11.PKCS11Token;
-import org.openeid.cdoc4j.crypto.CryptUtil;
-import org.openeid.cdoc4j.exception.CDOCException;
-import org.openeid.cdoc4j.exception.DecryptionException;
-import org.openeid.cdoc4j.exception.PrivateKeyMissingException;
-import org.openeid.cdoc4j.exception.RecipientCertificateException;
-import org.openeid.cdoc4j.exception.RecipientMissingException;
-import org.openeid.cdoc4j.xml.DDOCParser;
-import org.openeid.cdoc4j.xml.XMLDocumentBuilder;
-import org.openeid.cdoc4j.xml.XmlEncParser;
-import org.openeid.cdoc4j.xml.XmlEncParserFactory;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.openeid.cdoc4j.crypto.CryptUtil;
+import org.openeid.cdoc4j.exception.CDOCException;
+import org.openeid.cdoc4j.exception.DecryptionException;
+import org.openeid.cdoc4j.exception.RecipientCertificateException;
+import org.openeid.cdoc4j.exception.RecipientMissingException;
+import org.openeid.cdoc4j.token.Token;
+import org.openeid.cdoc4j.xml.DDOCParser;
+import org.openeid.cdoc4j.xml.XMLDocumentBuilder;
+import org.openeid.cdoc4j.xml.XmlEncParser;
+import org.openeid.cdoc4j.xml.XmlEncParserFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECPoint;
@@ -52,17 +40,24 @@ import java.util.List;
 /**
  * Class for decrypting CDOC documents (supports 1.0 and 1.1)
  * <p>
- * Required parameters for soft cert usage (a.k.a. for testing purposes):
- * <ul>
- * <li><b>{@link PrivateKey}</b> - required for the recipient to decrypt the file(s))</li>
- * <li><b>{@link X509Certificate}</b> - (only required when the to be encrypted CDOC recipient count is more than one)</li>
- * </ul>
- * Required parameters for HSM (Hardware Security Module) usage:
- * <ul>
- * <li><b>{@link String}</b> - path to the reachable (and usable) PKCS#11 (proxy) driver from the machine</li>
- * <li><b>{@link String}</b> - the required PIN to allow to perform the cryptographic operation on the HSM device</li>
- * <li><b>{@link Integer}</b> - the slot used by the driver to connect to the actual HSM</li>
- * </ul>
+ *   <b>Example of decrypting CDOC document with PKCS#11:</b>
+ * </p>
+ * <p><code>
+ *   PKCS11TokenParams params = new PKCS11TokenParams("/path/to/pkcs11/driver", "your PIN1", 0);
+ *   PKCS11Token token = new PKCS11Token(params) <br/>
+ *   List<DataFile> dataFiles = new CDOCDecrypter() <br/>
+ *   &nbsp;&nbsp;.withToken(token) <br/>
+ *   &nbsp;&nbsp;.decrypt(new FileInputStream(cdoc)); <br/>
+ * </code></p>
+ * <p>
+ *   <b>Example of decrypting CDOC document with PKCS#12:</b>
+ * </p>
+ * <p><code>
+ *   PKCS12Token token = new PKCS12Token("/path/to/pkcs12/file", "some password") <br/>
+ *   List<DataFile> dataFiles = new CDOCDecrypter() <br/>
+ *   &nbsp;&nbsp;.withToken(token) <br/>
+ *   &nbsp;&nbsp;.decrypt(new FileInputStream(cdoc)); <br/>
+ * </code></p>
  */
 public class CDOCDecrypter {
 
@@ -72,100 +67,16 @@ public class CDOCDecrypter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CDOCDecrypter.class);
 
-    private PKCS11TokenParams pkcs11Params;
-
-    private PrivateKey privateKey;
-
-    private Certificate certificate;
+    private Token token;
 
     /**
-     * Sets the recipient certificate (for soft cert usage; only required when CDOC contains more than one recipient)
+     * Sets the decryption token
      *
-     * @param certificate of the recipient
+     * @param token implementation of {@link Token} used for decryption
      * @return the current instance
      */
-    public CDOCDecrypter asRecipient(X509Certificate certificate) {
-        this.certificate = certificate;
-        return this;
-    }
-
-    /**
-     * Sets the recipient
-     *
-     * @param inputStream of the recipient's certificate (for soft cert usage; only required when CDOC contains more than one recipient)
-     * @throws RecipientCertificateException when there's an error reading the certificate from input stream
-     * @return the current instance
-     */
-    public CDOCDecrypter asRecipient(InputStream inputStream) throws RecipientCertificateException {
-        try {
-            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(inputStream);
-            return asRecipient(certificate);
-        } catch (CertificateException e) {
-            String message = "Error reading certificate from input stream!";
-            LOGGER.error(message, e);
-            throw new RecipientCertificateException(message, e);
-        }
-    }
-
-    /**
-     * Sets the private key input stream (for soft cert usage)
-     *
-     * @param privateKey of the recipient
-     * @return the current instance
-     */
-    public CDOCDecrypter withPrivateKey(PrivateKey privateKey) {
-        this.privateKey = privateKey;
-        return this;
-    }
-
-    /**
-     * Sets the private key input stream (for soft cert usage)
-     *
-     * @param pemInputStream of the recipient's private key
-     * @throws CDOCException when there's an error reading the private key from PEM input stream
-     * @return the current instance
-     */
-    public CDOCDecrypter withPrivateKey(InputStream pemInputStream) throws CDOCException {
-        withPrivateKey(getPrivateKeyFromPEM(pemInputStream));
-        return this;
-    }
-
-    /**
-     * Sets the PKCS#11 input parameters
-     *
-     * @param params for the PKCS#11 usage
-     * @return the current instance
-     */
-    public CDOCDecrypter withPkcs11(PKCS11TokenParams params) {
-        pkcs11Params = params;
-        return this;
-    }
-
-    /**
-     * Sets the PKCS#11 input parameters
-     *
-     * @param pkcs11Path path to the PKCS#11 driver
-     * @param pin of the HSM to perform the cryptographic operation
-     * @param slot used by the driver to connect to the actual HSM
-     * @return the current instance
-     */
-    public CDOCDecrypter withPkcs11(String pkcs11Path, String pin, int slot) {
-        pkcs11Params = new PKCS11TokenParams(pkcs11Path, pin, slot);
-        return this;
-    }
-
-    /**
-     * Sets the PKCS#11 input parameters
-     *
-     * @param pkcs11Path path to the PKCS#11 driver
-     * @param pin of the HSM to perform the cryptographic operation
-     * @param slot used by the driver to connect to the actual HSM
-     * @param label used by the driver to select correct object
-     * @return the current instance
-     */
-    public CDOCDecrypter withPkcs11(String pkcs11Path, String pin, int slot, String label) {
-        pkcs11Params = new PKCS11TokenParams(pkcs11Path, pin, slot, label);
+    public CDOCDecrypter withToken(Token token) {
+        this.token = token;
         return this;
     }
 
@@ -178,12 +89,8 @@ public class CDOCDecrypter {
      */
     public List<DataFile> decrypt(InputStream inputStream) throws CDOCException {
         LOGGER.info("Start decrypting payload from CDOC");
-        PKCS11Token token = null;
-        if (pkcs11Params != null) {
-            token = initPkcs11(pkcs11Params);
-        }
-        if (privateKey == null) {
-            throw new PrivateKeyMissingException("Private key not set!");
+        if (token == null) {
+            throw new DecryptionException("Token used for decryption not set!");
         }
 
         Document document = XMLDocumentBuilder.buildDocument(inputStream);
@@ -194,12 +101,8 @@ public class CDOCDecrypter {
         byte[] encryptedPayload = cdocparser.getEncryptedPayload();
         EncryptionMethod encryptionMethod = cdocparser.getEncryptionMethod();
 
-        SecretKey key = decryptKey(recipient, privateKey);
+        SecretKey key = decryptKey(recipient, token);
         byte[] decryptedPayload = decryptPayload(encryptionMethod, encryptedPayload, key);
-
-        if (token != null) {
-            token.removeProvider();
-        }
 
         List<DataFile> dataFiles;
         if (cdocparser.encryptedPayloadIsDDOC()) {
@@ -216,8 +119,9 @@ public class CDOCDecrypter {
         return dataFiles;
     }
 
-    private Recipient chooseRecipient(List<Recipient> recipients) throws RecipientMissingException, RecipientCertificateException {
+    private Recipient chooseRecipient(List<Recipient> recipients) throws CDOCException {
         if (recipients.size() > 1) {
+            Certificate certificate = token.getCertificate();
             if (certificate == null) {
                 String message = "Recipient not set! CDOC contains more than 1 recipients, recipient certificate needs to be set in order to choose the right recipient";
                 LOGGER.error(message);
@@ -237,45 +141,11 @@ public class CDOCDecrypter {
         }
     }
 
-    private PrivateKey getPrivateKeyFromPEM(InputStream pemInputStream) throws CDOCException {
-        try {
-            PEMParser pemParser = new PEMParser(new InputStreamReader(pemInputStream));
-            Object privateKey = pemParser.readObject();
-
-            if (privateKey instanceof PEMKeyPair) {
-                JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
-                PrivateKeyInfo keyInfo = ((PEMKeyPair) privateKey).getPrivateKeyInfo();
-                return converter.getPrivateKey(keyInfo);
-            }
-            return null;
-        } catch (IOException e) {
-            String message = "Error reading private key from input stream!";
-            LOGGER.error(message, e);
-            throw new CDOCException(message, e);
-        }
-    }
-
-    private PKCS11Token initPkcs11(PKCS11TokenParams params) throws CDOCException {
-        try {
-            LOGGER.debug("Initializing PKCS#11");
-            PKCS11Token token = new PKCS11Token(params.getPkcs11Path(), params.getPin().toCharArray(), params.getSlot(), params.getLabel());
-            KeyStore.PrivateKeyEntry privateKeyEntry = token.getKeys().get(0);
-            certificate = privateKeyEntry.getCertificate();
-            privateKey = privateKeyEntry.getPrivateKey();
-            LOGGER.debug("PKCS#11 initialized successfully!");
-            return token;
-        } catch (Exception e) {
-            String message = "Error initializing PKCS#11!";
-            LOGGER.error(message, e);
-            throw new CDOCException(message, e);
-        }
-    }
-
-    private SecretKey decryptKey(Recipient recipient, PrivateKey privateKey) throws DecryptionException {
-        if (recipient instanceof RSARecipient && "RSA".equals(privateKey.getAlgorithm())) {
-            return decryptRsaKey((RSARecipient) recipient, privateKey);
-        } else if (recipient instanceof ECRecipient && privateKey.getAlgorithm().startsWith("EC")) {
-            return decryptECKey((ECRecipient) recipient, privateKey);
+    private SecretKey decryptKey(Recipient recipient, Token token) throws CDOCException {
+        if (recipient instanceof RSARecipient) {
+            return decryptRsaKey((RSARecipient) recipient,token);
+        } else if (recipient instanceof ECRecipient) {
+            return decryptECKey((ECRecipient) recipient, token);
         } else {
             String message = "Private key algorithm doesn't match with recipient's key algorithm!";
             LOGGER.error(message);
@@ -283,28 +153,19 @@ public class CDOCDecrypter {
         }
     }
 
-    private SecretKey decryptRsaKey(RSARecipient recipient, PrivateKey privateKey) throws DecryptionException {
-        try {
-            byte[] keyBytes = CryptUtil.decryptRsa(recipient.getEncryptedKey(), privateKey);
-            return new SecretKeySpec(keyBytes, "AES");
-        } catch (GeneralSecurityException e) {
-            String message = "Error decrypting secret key!";
-            LOGGER.error(message, e);
-            throw new DecryptionException(message, e);
-        }
+    private SecretKey decryptRsaKey(RSARecipient recipient, Token token) throws CDOCException {
+        byte[] keyBytes = token.decrypt(recipient);
+        return new SecretKeySpec(keyBytes, "AES");
     }
 
-    private SecretKey decryptECKey(ECRecipient recipient, PrivateKey privateKey) throws DecryptionException {
+    private SecretKey decryptECKey(ECRecipient recipient, Token token) throws CDOCException {
         if (!isEphemeralPublicKeyValid(recipient.getEphemeralPublicKey())) {
             String message = "Ephemeral public key does not encode a valid point on the used elliptic curve!";
             LOGGER.error(message);
             throw new DecryptionException(message);
         }
         try {
-            KeyAgreement keyAgreement = KeyAgreement.getInstance("ECDH");
-            keyAgreement.init(privateKey);
-            keyAgreement.doPhase(recipient.getEphemeralPublicKey(), true);
-            byte[] sharedSecret = keyAgreement.generateSecret();
+            byte[] sharedSecret = token.decrypt(recipient);
 
             ConcatenationKDFGenerator concatenationKDFGenerator = new ConcatenationKDFGenerator(new SHA384Digest());
             concatenationKDFGenerator.init(new KDFParameters(sharedSecret, concatenate(recipient.getAlgorithmId(), recipient.getPartyUInfo(), recipient.getPartyVInfo())));

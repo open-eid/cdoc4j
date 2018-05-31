@@ -1,8 +1,8 @@
 package org.openeid.cdoc4j.xml;
 
+import org.apache.commons.codec.binary.Base64;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
-import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;

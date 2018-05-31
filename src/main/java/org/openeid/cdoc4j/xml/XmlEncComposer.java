@@ -1,5 +1,7 @@
 package org.openeid.cdoc4j.xml;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FilenameUtils;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.EncryptionMethod;
 import org.openeid.cdoc4j.crypto.CertUtil;
@@ -8,8 +10,6 @@ import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.EncryptionException;
 import org.openeid.cdoc4j.exception.RecipientCertificateException;
 import org.openeid.cdoc4j.xml.exception.XmlTransformException;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;

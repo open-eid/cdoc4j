@@ -1,10 +1,10 @@
 package org.openeid.cdoc4j;
 
+import org.junit.Test;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.DataFileMissingException;
 import org.openeid.cdoc4j.exception.RecipientCertificateException;
 import org.openeid.cdoc4j.exception.RecipientMissingException;
-import org.junit.Test;
 
 import java.io.InputStream;
 

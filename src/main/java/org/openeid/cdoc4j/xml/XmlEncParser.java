@@ -1,21 +1,17 @@
 package org.openeid.cdoc4j.xml;
 
+import org.apache.commons.codec.binary.Base64;
 import org.openeid.cdoc4j.EncryptionMethod;
 import org.openeid.cdoc4j.RSARecipient;
 import org.openeid.cdoc4j.Recipient;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
-import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.*;
 import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;

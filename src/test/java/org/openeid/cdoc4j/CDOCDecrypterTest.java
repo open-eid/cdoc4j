@@ -1,10 +1,14 @@
 package org.openeid.cdoc4j;
 
-import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.openeid.cdoc4j.token.pkcs11.PKCS11Token;
+import org.openeid.cdoc4j.token.pkcs11.PKCS11TokenParams;
+import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
+import org.openeid.cdoc4j.xml.exception.XmlParseException;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,15 +21,16 @@ public class CDOCDecrypterTest {
     @Test
     public void buildAndDecryptCDOC10_shouldSucceed() throws Exception {
         DataFile dataFile = new DataFile("test.txt", "test CDOC 1.0".getBytes());
-        InputStream certificateInputStream = CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_cert.pem");
+        InputStream certificateInputStream = CDOCDecrypterTest.class.getResourceAsStream("/rsa/auth_cert.pem");
 
         byte[] cdoc = CDOCBuilder.version("1.0")
                 .withDataFile(dataFile)
                 .withRecipient(certificateInputStream)
                 .build();
 
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPrivateKey(CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_priv_key.pem"))
+                .withToken(token)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());
@@ -37,15 +42,16 @@ public class CDOCDecrypterTest {
         DataFile dataFile = new DataFile("test.txt", "test CDOC 1.0".getBytes());
         DataFile dataFile2 = new DataFile("test2.txt", "test CDOC 1.0 vol. 2".getBytes());
 
-        InputStream certificateInputStream = CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_cert.pem");
+        InputStream certificateInputStream = CDOCDecrypterTest.class.getResourceAsStream("/rsa/auth_cert.pem");
         byte[] cdoc = CDOCBuilder.version("1.0")
                 .withDataFile(dataFile)
                 .withDataFile(dataFile2)
                 .withRecipient(certificateInputStream)
                 .build();
 
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPrivateKey(CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_priv_key.pem"))
+                .withToken(token)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());
@@ -59,14 +65,15 @@ public class CDOCDecrypterTest {
     public void buildAndDecryptCDOC11_shouldSucceed() throws Exception {
         DataFile dataFile = new DataFile("test.txt", "test CDOC 1.1".getBytes());
 
-        InputStream certificateInputStream = CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_cert.pem");
+        InputStream certificateInputStream = CDOCDecrypterTest.class.getResourceAsStream("/rsa/auth_cert.pem");
         byte[] cdoc = CDOCBuilder.version("1.1")
                 .withDataFile(dataFile)
                 .withRecipient(certificateInputStream)
                 .build();
 
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPrivateKey(CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_priv_key.pem"))
+                .withToken(token)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());
@@ -78,15 +85,16 @@ public class CDOCDecrypterTest {
         DataFile dataFile = new DataFile("test.txt", "test CDOC 1.1".getBytes());
         DataFile dataFile2 = new DataFile("test2.txt", "test CDOC 1.1 vol. 2".getBytes());
 
-        InputStream certificateInputStream = CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_cert.pem");
+        InputStream certificateInputStream = CDOCDecrypterTest.class.getResourceAsStream("/rsa/auth_cert.pem");
         byte[] cdoc = CDOCBuilder.version("1.1")
                 .withDataFile(dataFile)
                 .withDataFile(dataFile2)
                 .withRecipient(certificateInputStream)
                 .build();
 
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPrivateKey(CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_priv_key.pem"))
+                .withToken(token)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());
@@ -100,14 +108,15 @@ public class CDOCDecrypterTest {
     public void buildAndDecryptCDOC11_withECKeys_shouldSucceed() throws Exception {
         DataFile dataFile = new DataFile("test.txt", "test CDOC 1.1 with EC keys ".getBytes());
 
-        InputStream certificateInputStream = CDOC10BuilderTest.class.getResourceAsStream("/ecc/auth_cert.pem");
+        InputStream certificateInputStream = CDOCDecrypterTest.class.getResourceAsStream("/ecc/auth_cert.pem");
         byte[] cdoc = CDOCBuilder.version("1.1")
                 .withDataFile(dataFile)
                 .withRecipient(certificateInputStream)
                 .build();
 
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPrivateKey(CDOC10BuilderTest.class.getResourceAsStream("/ecc/auth_priv_key.pem"))
+                .withToken(token)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());
@@ -120,13 +129,13 @@ public class CDOCDecrypterTest {
 
         byte[] cdoc = CDOCBuilder.version("1.1")
                 .withDataFile(dataFile)
-                .withRecipient(CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_cert.pem"))
-                .withRecipient(CDOC10BuilderTest.class.getResourceAsStream("/ecc/auth_cert.pem"))
+                .withRecipient(CDOCDecrypterTest.class.getResourceAsStream("/rsa/auth_cert.pem"))
+                .withRecipient(CDOCDecrypterTest.class.getResourceAsStream("/ecc/auth_cert.pem"))
                 .build();
 
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .asRecipient(CDOC10BuilderTest.class.getResourceAsStream("/ecc/auth_cert.pem"))
-                .withPrivateKey(CDOC10BuilderTest.class.getResourceAsStream("/ecc/auth_priv_key.pem"))
+                .withToken(token)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());
@@ -139,14 +148,15 @@ public class CDOCDecrypterTest {
         dataFiles.add(new DataFile("test.txt", "test CDOC 1.1 with EC keys ".getBytes()));
         dataFiles.add(new DataFile("test2.txt", "test CDOC 1.1 vol. 2".getBytes()));
 
-        InputStream certificateInputStream = CDOC10BuilderTest.class.getResourceAsStream("/ecc/auth_cert.pem");
+        InputStream certificateInputStream = CDOCDecrypterTest.class.getResourceAsStream("/ecc/auth_cert.pem");
         byte[] cdoc = CDOCBuilder.version("1.1")
                 .withDataFiles(dataFiles)
                 .withRecipient(certificateInputStream)
                 .build();
 
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
         List<DataFile> decryptedDataFiles = new CDOCDecrypter()
-                .withPrivateKey(CDOC10BuilderTest.class.getResourceAsStream("/ecc/auth_priv_key.pem"))
+                .withToken(token)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFiles.get(0).getFileName(), decryptedDataFiles.get(0).getFileName());
@@ -158,10 +168,11 @@ public class CDOCDecrypterTest {
 
     @Test(expected = XmlParseException.class)
     public void decryptCDOC11_withEntityExpansionAttack_shouldThrowException() throws Exception {
-        InputStream cdocInputStream = CDOC10BuilderTest.class.getResourceAsStream("/cdoc/1.0-XXE.cdoc");
+        InputStream cdocInputStream = CDOCDecrypterTest.class.getResourceAsStream("/cdoc/1.0-XXE.cdoc");
 
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
         new CDOCDecrypter()
-                .withPrivateKey(CDOC10BuilderTest.class.getResourceAsStream("/rsa/auth_priv_key.pem"))
+                .withToken(token)
                 .decrypt(cdocInputStream);
     }
 
@@ -170,14 +181,16 @@ public class CDOCDecrypterTest {
     public void buildAndDecryptCDOC_withPKCS11_shouldSucceed() throws Exception {
         DataFile dataFile = new DataFile("test.txt", "test CDOC 1.1 with PKCS#11".getBytes());
 
-        InputStream certificateInputStream = null; // set desired certificate
+        InputStream certificateInputStream = CDOCDecrypterTest.class.getResourceAsStream("/path/to/cert"); // set desired certificate
         byte[] cdoc = CDOCBuilder.version("1.1")
                 .withDataFile(dataFile)
                 .withRecipient(certificateInputStream)
                 .build();
 
+        PKCS11TokenParams params = new PKCS11TokenParams("/usr/local/lib/onepin-opensc-pkcs11.so", "DO NOT COMMIT YOUR PIN!".toCharArray(), 0);
+        PKCS11Token token = new PKCS11Token(params);
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPkcs11("/usr/local/lib/onepin-opensc-pkcs11.so", "DO NOT COMMIT YOUR PIN!", 0)
+                .withToken(token)
                 .decrypt(new ByteArrayInputStream(cdoc));
 
         assertEquals(dataFile.getFileName(), dataFiles.get(0).getFileName());

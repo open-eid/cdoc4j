@@ -1,5 +1,11 @@
 package org.openeid.cdoc4j.xml;
 
+import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.util.encoders.Hex;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.crypto.CertUtil;
 import org.openeid.cdoc4j.crypto.CryptUtil;
@@ -7,12 +13,6 @@ import org.openeid.cdoc4j.crypto.KeyGenUtil;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.EncryptionException;
 import org.openeid.cdoc4j.exception.RecipientCertificateException;
-import org.apache.commons.codec.binary.Base64;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.params.KDFParameters;
-import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;

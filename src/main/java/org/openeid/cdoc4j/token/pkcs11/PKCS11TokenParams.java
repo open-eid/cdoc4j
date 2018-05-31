@@ -1,19 +1,19 @@
-package org.openeid.cdoc4j;
+package org.openeid.cdoc4j.token.pkcs11;
 
 public class PKCS11TokenParams {
 
     private String pkcs11Path;
-    private String pin;
+    private char[] pin;
     private int slot;
     private String label;
 
-    public PKCS11TokenParams(String pkcs11Path, String pin, int slot) {
+    public PKCS11TokenParams(String pkcs11Path, char[] pin, int slot) {
         this.pkcs11Path = pkcs11Path;
         this.pin = pin;
         this.slot = slot;
     }
 
-    public PKCS11TokenParams(String pkcs11Path, String pin, int slot, String label) {
+    public PKCS11TokenParams(String pkcs11Path, char[] pin, int slot, String label) {
         this(pkcs11Path, pin, slot);
         this.label = label;
     }
@@ -22,7 +22,7 @@ public class PKCS11TokenParams {
         return pkcs11Path;
     }
 
-    public String getPin() {
+    public char[] getPin() {
         return pin;
     }
 
@@ -35,3 +35,4 @@ public class PKCS11TokenParams {
     }
 
 }
+
