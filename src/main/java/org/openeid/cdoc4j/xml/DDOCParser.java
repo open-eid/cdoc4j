@@ -1,6 +1,6 @@
 package org.openeid.cdoc4j.xml;
 
-import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.util.encoders.Base64;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.slf4j.Logger;
@@ -36,7 +36,7 @@ public class DDOCParser {
             for (int i = 0; i < dataFileNodes.getLength(); i++) {
                 Node dataFileNode = dataFileNodes.item(i);
                 String dataFileName = dataFileNode.getAttributes().getNamedItem("Filename").getTextContent();
-                byte[] dataFileContent = Base64.decodeBase64(dataFileNode.getTextContent());
+                byte[] dataFileContent = Base64.decode(dataFileNode.getTextContent());
                 dataFiles.add(new DataFile(dataFileName, dataFileContent));
             }
             return dataFiles;

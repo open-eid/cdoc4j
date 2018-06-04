@@ -1,10 +1,10 @@
 package org.openeid.cdoc4j.xml;
 
-import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.openeid.cdoc4j.ECRecipient;
 import org.openeid.cdoc4j.Recipient;
@@ -89,7 +89,7 @@ public class XmlEnc11Parser extends XmlEncParser {
             ECNamedCurveParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec("secp384r1");
             ECParameterSpec secp384r1 = new ECNamedCurveSpec(ecParameterSpec.getName(), ecParameterSpec.getCurve(),
                     ecParameterSpec.getG(), ecParameterSpec.getN(), ecParameterSpec.getH());
-            ECPoint point = ECPointUtil.decodePoint(secp384r1.getCurve(), Base64.decodeBase64(publicKey.getTextContent()));
+            ECPoint point = ECPointUtil.decodePoint(secp384r1.getCurve(), Base64.decode(publicKey.getTextContent()));
             KeyFactory ecKeyFactory = KeyFactory.getInstance("EC");
             ECPublicKey ecPublicKey = (ECPublicKey) ecKeyFactory.generatePublic(new ECPublicKeySpec(point, secp384r1));
 
@@ -108,7 +108,7 @@ public class XmlEnc11Parser extends XmlEncParser {
             if (certificateBase64 == null) {
                 throw new XmlParseException("Recipient's 'X509Certificate' element not found!");
             }
-            byte[] certificateDer = Base64.decodeBase64(certificateBase64.getTextContent());
+            byte[] certificateDer = Base64.decode(certificateBase64.getTextContent());
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
             X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new ByteArrayInputStream(certificateDer));
             return certificate;

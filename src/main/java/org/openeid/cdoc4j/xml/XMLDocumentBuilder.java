@@ -31,15 +31,18 @@ public class XMLDocumentBuilder {
     }
 
     public static Document buildDocument(InputStream inputStream) throws XmlParseException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-
             // Disable XML External Entity injection
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-
+        } catch (ParserConfigurationException e) {
+            String message = "Error disabling features regarding XML External Entity injection attacks!";
+            LOGGER.error(message, e);
+        }
+        try {
             DocumentBuilder dBuilder = factory.newDocumentBuilder();
             return dBuilder.parse(inputStream);
         } catch (Exception e) {

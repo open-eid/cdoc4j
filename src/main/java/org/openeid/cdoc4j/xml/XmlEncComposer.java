@@ -1,7 +1,7 @@
 package org.openeid.cdoc4j.xml;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
+import org.bouncycastle.util.encoders.Base64;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.EncryptionMethod;
 import org.openeid.cdoc4j.crypto.CertUtil;
@@ -94,7 +94,7 @@ public class XmlEncComposer {
         keyInfo.appendChild(x509Data);
         try {
             Element x509Certificate = document.createElement("ds:X509Certificate");
-            x509Certificate.setTextContent(Base64.encodeBase64String(certificate.getEncoded()));
+            x509Certificate.setTextContent(Base64.toBase64String(certificate.getEncoded()));
             x509Data.appendChild(x509Certificate);
         } catch (CertificateEncodingException e) {
             String message = "Error encoding certificate: " + certificate.getSubjectDN().getName();
@@ -107,7 +107,7 @@ public class XmlEncComposer {
         Element cipherValue = document.createElement("denc:CipherValue");
         try {
             byte[] encryptedKeyBytes = CryptUtil.encryptRsa(key.getEncoded(), certificate);
-            cipherValue.setTextContent(Base64.encodeBase64String(encryptedKeyBytes));
+            cipherValue.setTextContent(Base64.toBase64String(encryptedKeyBytes));
         } catch (GeneralSecurityException e) {
             String message = "Error encrypting secret key!";
             LOGGER.error(message, e);
@@ -138,7 +138,7 @@ public class XmlEncComposer {
             byteArrayOutputStream.write(iv);
             byteArrayOutputStream.write(encryptedDataFiles);
 
-            cipherValue.setTextContent(Base64.encodeBase64String(byteArrayOutputStream.toByteArray()));
+            cipherValue.setTextContent(Base64.toBase64String(byteArrayOutputStream.toByteArray()));
         } catch (GeneralSecurityException | IOException e) {
             String message = "Error encrypting data files!";
             LOGGER.error(message, e);
@@ -164,7 +164,7 @@ public class XmlEncComposer {
             datafile.setAttribute("MimeType", "application/octet-stream");
             datafile.setAttribute("Size", String.valueOf(dataFile.getContent().length));
             datafile.setAttribute("Id", "D" + i++);
-            datafile.setTextContent(Base64.encodeBase64String(dataFile.getContent()));
+            datafile.setTextContent(Base64.toBase64String(dataFile.getContent()));
             signedDoc.appendChild(datafile);
         }
 

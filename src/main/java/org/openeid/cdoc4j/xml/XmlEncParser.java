@@ -1,6 +1,6 @@
 package org.openeid.cdoc4j.xml;
 
-import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.util.encoders.Base64;
 import org.openeid.cdoc4j.EncryptionMethod;
 import org.openeid.cdoc4j.RSARecipient;
 import org.openeid.cdoc4j.Recipient;
@@ -58,7 +58,7 @@ public class XmlEncParser {
             if (cipherValue == null) {
                 throw new XmlParseException("'CipherValue' element (of the encrypted payload) not found!");
             }
-            byte[] encryptedPayload = Base64.decodeBase64(cipherValue.getTextContent());
+            byte[] encryptedPayload = Base64.decode(cipherValue.getTextContent());
             return encryptedPayload;
         } catch (XPathExpressionException e) {
             String message = "Error parsing encrypted payload from CDOC!";
@@ -128,7 +128,7 @@ public class XmlEncParser {
             if (certificateBase64 == null) {
                 throw new XmlParseException("Recipient's 'X509Certificate' element not found!");
             }
-            byte[] certificateDer = Base64.decodeBase64(certificateBase64.getTextContent());
+            byte[] certificateDer = Base64.decode(certificateBase64.getTextContent());
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
             X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(new ByteArrayInputStream(certificateDer));
             return certificate;
@@ -146,7 +146,7 @@ public class XmlEncParser {
             if (encryptedKey == null) {
                 throw new XmlParseException("'CipherValue' element (of the encrypted recipient's key) not found!");
             }
-            return Base64.decodeBase64(encryptedKey.getTextContent());
+            return Base64.decode(encryptedKey.getTextContent());
         } catch (XPathExpressionException e) {
             String message = "Error parsing encrypted key from CDOC!";
             LOGGER.error(message, e);

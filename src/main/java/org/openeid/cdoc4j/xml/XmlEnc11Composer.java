@@ -1,10 +1,10 @@
 package org.openeid.cdoc4j.xml;
 
-import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.crypto.CertUtil;
@@ -125,7 +125,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
         eckeyValue.appendChild(namedCurve);
 
         Element publicKey = document.createElement("dsig11:PublicKey");
-        publicKey.setTextContent(Base64.encodeBase64String(partyUInfo));
+        publicKey.setTextContent(Base64.toBase64String(partyUInfo));
         eckeyValue.appendChild(publicKey);
 
         keyValue.appendChild(eckeyValue);
@@ -139,7 +139,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
 
         Element x509Certificate = document.createElement("ds:X509Certificate");
         try {
-            x509Certificate.setTextContent(Base64.encodeBase64String(certificate.getEncoded()));
+            x509Certificate.setTextContent(Base64.toBase64String(certificate.getEncoded()));
         } catch (CertificateEncodingException e) {
             String message = "Error encoding certificate: " + certificate.getSubjectDN().getName();
             LOGGER.error(message, e);
@@ -177,7 +177,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
             Cipher c = Cipher.getInstance("AESWrap");
             c.init(Cipher.WRAP_MODE, wrapKey);
             byte[] wrappedKey = c.wrap(key);
-            cipherValue.setTextContent(Base64.encodeBase64String(wrappedKey));
+            cipherValue.setTextContent(Base64.toBase64String(wrappedKey));
         } catch (GeneralSecurityException | IOException e) {
             String message = "Error generating ECDH key agreement!";
             LOGGER.error(message, e);
@@ -209,7 +209,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
             byteArrayOutputStream.write(iv);
             byteArrayOutputStream.write(encryptedDataFiles);
 
-            cipherValue.setTextContent(Base64.encodeBase64String(byteArrayOutputStream.toByteArray()));
+            cipherValue.setTextContent(Base64.toBase64String(byteArrayOutputStream.toByteArray()));
         } catch (GeneralSecurityException | IOException e) {
             String message = "Error encrypting data files!";
             LOGGER.error(message, e);

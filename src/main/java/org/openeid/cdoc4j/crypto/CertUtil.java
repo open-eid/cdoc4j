@@ -1,12 +1,15 @@
 package org.openeid.cdoc4j.crypto;
 
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.openeid.cdoc4j.exception.RecipientCertificateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.naming.InvalidNameException;
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 public class CertUtil {
@@ -16,19 +19,11 @@ public class CertUtil {
     private CertUtil() {}
 
     public static String getCN(X509Certificate certificate) throws RecipientCertificateException {
-        return getRdn(certificate, "CN");
-    }
-
-    private static String getRdn(X509Certificate certificate, String input) throws RecipientCertificateException {
         try {
-            LdapName ln = new LdapName(certificate.getSubjectDN().getName());
-            for (Rdn rdn : ln.getRdns()) {
-                if (input.equalsIgnoreCase(rdn.getType())) {
-                    return rdn.getValue().toString();
-                }
-            }
-            return null;
-        } catch (InvalidNameException e) {
+            X500Name x500name = new JcaX509CertificateHolder(certificate).getSubject();
+            RDN cn = x500name.getRDNs(BCStyle.CN)[0];
+            return IETFUtils.valueToString(cn.getFirst().getValue());
+        } catch (CertificateException e) {
             String message = "Error extracting CN from certificate: " + certificate.getSubjectDN().getName();
             LOGGER.error(message, e);
             throw new RecipientCertificateException(message, e);

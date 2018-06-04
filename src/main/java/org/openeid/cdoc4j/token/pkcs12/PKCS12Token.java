@@ -49,6 +49,10 @@ public class PKCS12Token implements Token {
         }
     }
 
+    public PKCS12Token(InputStream p12InputStream, String password) throws PKCS12Exception {
+        this(p12InputStream, password, null);
+    }
+
     private KeyStore.PrivateKeyEntry getKeyEntry(KeyStore keystore, String password, String alias) throws GeneralSecurityException {
         if (keystore.isKeyEntry(alias)) {
             KeyStore.Entry entry = keystore.getEntry(alias, new KeyStore.PasswordProtection(password.toCharArray()));
@@ -57,10 +61,6 @@ public class PKCS12Token implements Token {
             }
         }
         return null;
-    }
-
-    public PKCS12Token(InputStream p12InputStream, String password) throws PKCS12Exception {
-        this(p12InputStream, password, null);
     }
 
     @Override
