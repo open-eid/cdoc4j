@@ -33,7 +33,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <bouncycastle.version>1.54</bouncycastle.version>
+        <bouncycastle.version>1.59</bouncycastle.version>
     </properties>
 
     <dependencies>
