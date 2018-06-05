@@ -3,12 +3,15 @@ package org.openeid.cdoc4j.util.commands;
 import org.apache.commons.io.FileUtils;
 import org.openeid.cdoc4j.CDOCDecrypter;
 import org.openeid.cdoc4j.DataFile;
+import org.openeid.cdoc4j.token.Token;
+import org.openeid.cdoc4j.token.pkcs11.PKCS11Token;
+import org.openeid.cdoc4j.token.pkcs11.PKCS11TokenParams;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -38,7 +41,7 @@ public class PKCS11Decrypt implements Callable<Void>  {
     private File outputPath = new File(".");
 
     @Override
-    public Void call() throws Exception {
+    public Void call() {
         try {
             decrypt();
         } catch (Exception e) {
@@ -49,11 +52,12 @@ public class PKCS11Decrypt implements Callable<Void>  {
     }
 
     private void decrypt() throws Exception {
-        byte[] cdoc = FileUtils.readFileToByteArray(inputFile);
+        PKCS11TokenParams params = new PKCS11TokenParams(driver, pin.toCharArray(), slot, label);
+        Token token = new PKCS11Token(params);
 
         List<DataFile> dataFiles = new CDOCDecrypter()
-                .withPkcs11(driver, pin, slot, label)
-                .decrypt(new ByteArrayInputStream(cdoc));
+                .withToken(token)
+                .decrypt(new FileInputStream(inputFile));
 
         for (DataFile dataFile : dataFiles) {
             writeOutputFile(dataFile);

@@ -1,18 +1,22 @@
 package org.openeid.cdoc4j.util.commands;
 
+import org.apache.commons.io.FileUtils;
 import org.openeid.cdoc4j.CDOCDecrypter;
 import org.openeid.cdoc4j.DataFile;
-import org.apache.commons.io.FileUtils;
+import org.openeid.cdoc4j.token.Token;
+import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-@Command(name = "decrypt")
-public class Decrypt implements Callable<Void> {
+@Command(name = "pkcs12-decrypt")
+public class PKCS12Decrypt implements Callable<Void> {
 
   @Option(names = {"-h", "--help"}, usageHelp = true, description = "display usage help")
   boolean usageHelpRequested;
@@ -20,18 +24,21 @@ public class Decrypt implements Callable<Void> {
   @Option(names = {"-f", "--file"}, description = "cdoc input file", required = true)
   private File inputFile;
 
-  @Option(names = {"-k", "--decryption-key"}, description = "path to decryption key", required = true)
-  private File decryptionKey;
+  @Option(names = {"-k", "--keystore"}, description = "path to p12 keystore", required = true)
+  private File keyStore;
 
-  @Option(names = {"-c", "--certifcate"}, description = "path to certificate")
-  private File certificate;
+  @Option(names = {"-p", "--password"}, description = "p12 keystore password")
+  private String password;
+
+  @Option(names = {"-a", "--alias"}, description = "object label in PKCS11")
+  private String alias;
 
   @Option(names = {"-o", "--output"}, description = "output destination | Default: current-directory")
   private File outputPath = new File(".");
 
 
   @Override
-  public Void call() throws Exception {
+  public Void call() {
     try {
       decrypt();
     } catch (Exception e) {
@@ -42,20 +49,11 @@ public class Decrypt implements Callable<Void> {
   }
 
   private void decrypt() throws Exception {
-    byte[] cdoc = FileUtils.readFileToByteArray(inputFile);
-    InputStream keyIn = new FileInputStream(decryptionKey);
+    Token token = new PKCS12Token(new FileInputStream(keyStore), password, alias);
 
-    CDOCDecrypter decrypter = new CDOCDecrypter();
-
-    if (certificate != null) {
-      try (InputStream certificateInputStream = new FileInputStream(certificate)) {
-        decrypter.asRecipient(certificateInputStream);
-      }
-    }
-
-    List<DataFile> dataFiles = decrypter
-            .withPrivateKey(keyIn)
-            .decrypt(new ByteArrayInputStream(cdoc));
+    List<DataFile> dataFiles = new CDOCDecrypter()
+            .withToken(token)
+            .decrypt(new FileInputStream(inputFile));
 
     for (DataFile dataFile : dataFiles) {
       writeOutputFile(dataFile);
