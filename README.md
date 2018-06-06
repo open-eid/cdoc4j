@@ -14,5 +14,15 @@ Java library for working with CDOC documents.
 * [Unlimited Strength Jurisdiction Policy](https://github.com/open-eid/cdoc4j/wiki/Enabling-Unlimited-Strength-Jurisdiction-Policy)
 
 ## How to use it
-Take a look at the [examples](https://github.com/open-eid/cdoc4j/wiki/Examples-of-how-to-use-it).
+Take a look at the [examples](https://github.com/open-eid/cdoc4j/wiki/Examples-of-how-to-use-it)
 
+## Maven Central
+You can use the library as a dependency from [Maven Central](http://mvnrepository.com/artifact/org.open-eid.cdoc4j/cdoc4j)
+
+```xml
+<dependency>
+    <groupId>org.open-eid.cdoc4j</groupId>
+    <artifactId>cdoc4j</artifactId>
+    <version>1.1</version>
+</dependency>
+```
