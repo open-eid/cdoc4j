@@ -183,8 +183,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
             LOGGER.error(message, e);
             throw new CDOCException(message, e);
         }
-
-        cipherData.appendChild(cipherValue);
+        
         cipherData.appendChild(cipherValue);
 
         return cipherData;
