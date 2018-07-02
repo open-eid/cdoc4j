@@ -1,33 +1,39 @@
 package org.openeid.cdoc4j.xml;
 
+import javanet.staxutils.IndentingXMLStreamWriter;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.CountingOutputStream;
 import org.bouncycastle.util.encoders.Base64;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.EncryptionMethod;
 import org.openeid.cdoc4j.crypto.CertUtil;
 import org.openeid.cdoc4j.crypto.CryptUtil;
+import org.openeid.cdoc4j.crypto.PaddingUtil;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.EncryptionException;
 import org.openeid.cdoc4j.exception.RecipientCertificateException;
+import org.openeid.cdoc4j.stream.ClosableBase64OutputStream;
 import org.openeid.cdoc4j.xml.exception.XmlTransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
+import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayOutputStream;
+import javax.crypto.spec.IvParameterSpec;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -36,196 +42,326 @@ public class XmlEncComposer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XmlEncComposer.class);
 
-    protected static final String ENCODING = "UTF-8";
     protected static final String DDOC_MIMETYPE = "http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd";
     protected static final String ENCDOC_XML_VERSION = "ENCDOC-XML|1.0";
 
-    protected Document document;
+    protected static final String XML_ENCRYPTION_NAMESPACE_URL = "http://www.w3.org/2001/04/xmlenc#";
+    protected static final String XML_ENCRYPTION_NAMESPACE_PREFIX = "denc";
 
-    public byte[] constructXML(EncryptionMethod encryptionMethod, SecretKey key, List<X509Certificate> recipients, List<DataFile> dataFiles) throws CDOCException {
-        document = XMLDocumentBuilder.createDocument();
-        Element root = createEncryptedData(dataFiles.size());
-        root.appendChild(createEncryptionMethod(encryptionMethod.getURI()));
-        root.appendChild(createRecipientsKeyInfo(key, recipients));
-        root.appendChild(createCipherData(key, dataFiles));
-        root.appendChild(createEncryptionProperties(dataFiles));
-        document.appendChild(root);
-        return transformToXml(document);
-    }
+    protected static final String XML_SIGNATURE_NAMESPACE_URL = "http://www.w3.org/2000/09/xmldsig#";
+    protected static final String XML_SINGATURE_NAMESPACE_PREFIX = "ds";
 
-    protected Element createEncryptedData(int dataFilesSize) {
-        Element encryptedData = document.createElement("denc:EncryptedData");
-        encryptedData.setAttribute("xmlns:denc", "http://www.w3.org/2001/04/xmlenc#");
-        if (dataFilesSize > 1) {
-            LOGGER.debug("Multiple data files set - setting MimeType to: \"" + DDOC_MIMETYPE + "\"");
-            encryptedData.setAttribute("MimeType", DDOC_MIMETYPE);
-        } else {
-            encryptedData.setAttribute("MimeType", "application/octet-stream");
+    protected List<DataFile> dataFiles;
+    protected EncryptionMethod encryptionMethod;
+    protected SecretKey secretKey;
+    protected List<X509Certificate> recipients;
+
+    protected XMLStreamWriter writer;
+    protected XMLOutputFactory factory;
+    protected OutputStream output;
+
+    public void constructXML(
+            EncryptionMethod encryptionMethod,
+            SecretKey secretKey,
+            List<X509Certificate> recipients,
+            List<DataFile> dataFiles,
+            OutputStream output) throws CDOCException {
+
+        this.dataFiles = dataFiles;
+        this.encryptionMethod = encryptionMethod;
+        this.secretKey = secretKey;
+        this.recipients = recipients;
+        this.output = output;
+        factory = XMLOutputFactory.newInstance();
+
+        try {
+            writer = new IndentingXMLStreamWriter(factory.createXMLStreamWriter(output));
+
+            writer.writeStartDocument(StandardCharsets.UTF_8.name(), "1.0");
+            createEncryptedDataElement();
+            writer.writeEndDocument();
+
+        } catch (XMLStreamException e) {
+            throw formXmlTransformException("Failed to construct XML", e);
+        } finally {
+            try {
+                writer.flush();
+                writer.close();
+                output.close();
+
+            } catch (XMLStreamException | IOException e) {
+                throw new IllegalStateException("Failed to close XMLStreamWriter", e);
+            }
         }
-        return encryptedData;
     }
 
-    protected Element createEncryptionMethod(String algorithmUri) {
-        Element encryptionMethod = document.createElement("denc:EncryptionMethod");
-        encryptionMethod.setAttribute("Algorithm", algorithmUri);
-        return encryptionMethod;
+    private void createEncryptedDataElement() throws XMLStreamException, CDOCException {
+        writer.writeStartElement(xmlEncPrefix("EncryptedData"));
+        writer.writeNamespace(XML_ENCRYPTION_NAMESPACE_PREFIX, XML_ENCRYPTION_NAMESPACE_URL);
+        createMimeTypeAttribute();
+        createEncryptionMethodElement(encryptionMethod.getURI());
+        createKeyInfoElement();
+        createCipherDataElement();
+        createEncryptionPropertiesElement();
+        writer.writeEndElement();
     }
 
-    protected Element createRecipientsKeyInfo(SecretKey key, List<X509Certificate> recipients) throws CDOCException {
-        Element keyInfo = document.createElement("ds:KeyInfo");
-        keyInfo.setAttribute("xmlns:ds", "http://www.w3.org/2000/09/xmldsig#");
+    private void createMimeTypeAttribute() throws XMLStreamException {
+        if (dataFiles.size() > 1) {
+            LOGGER.debug("Multiple data files set - setting MimeType to: \"" + DDOC_MIMETYPE + "\"");
+            writer.writeAttribute("MimeType", DDOC_MIMETYPE);
+        } else {
+            writer.writeAttribute("MimeType", "application/octet-stream");
+        }
+    }
+
+    protected void createEncryptionMethodElement(String algorithmUrl) throws XMLStreamException {
+        writer.writeEmptyElement(xmlEncPrefix("EncryptionMethod"));
+        writer.writeAttribute("Algorithm", algorithmUrl);
+    }
+
+    private void createKeyInfoElement() throws XMLStreamException, CDOCException {
+        writer.writeStartElement(xmlSigPrefix("KeyInfo"));
+        writer.writeNamespace(XML_SINGATURE_NAMESPACE_PREFIX, XML_SIGNATURE_NAMESPACE_URL);
 
         for (X509Certificate certificate : recipients) {
-            keyInfo.appendChild(createRecipientEncryptedKey(key, certificate));
+            createRecipientEncryptedKeyElement(certificate);
         }
 
-        return keyInfo;
+        writer.writeEndElement();
     }
 
-    protected Element createRecipientEncryptedKey(SecretKey key, X509Certificate certificate) throws CDOCException {
-        Element encryptedKey = document.createElement("denc:EncryptedKey");
-        encryptedKey.setAttribute("Recipient", CertUtil.getCN(certificate));
+    protected void createRecipientEncryptedKeyElement(X509Certificate certificate) throws XMLStreamException, CDOCException {
+        writer.writeStartElement(xmlEncPrefix("EncryptedKey"));
+        writer.writeAttribute("Recipient", CertUtil.getCN(certificate));
+        createEncryptionMethodElement("http://www.w3.org/2001/04/xmlenc#rsa-1_5");
+        createKeyInfoElement(certificate);
+        createRecipientCipherDataElement(certificate);
+        writer.writeEndElement();
+    }
 
-        Element encryptionMethod = createEncryptionMethod("http://www.w3.org/2001/04/xmlenc#rsa-1_5");
-        encryptedKey.appendChild(encryptionMethod);
+    protected void createKeyInfoElement(X509Certificate certificate) throws XMLStreamException, CDOCException {
+        writer.writeStartElement(xmlSigPrefix("KeyInfo"));
+        createX509DataElement(certificate);
+        writer.writeEndElement();
+    }
 
-        Element keyInfo = document.createElement("ds:KeyInfo");
-        Element x509Data = document.createElement("ds:X509Data");
-        keyInfo.appendChild(x509Data);
+    protected void createX509DataElement(X509Certificate certificate) throws XMLStreamException, RecipientCertificateException {
+        writer.writeStartElement(xmlSigPrefix("X509Data"));
+        createX509CertificateElement(certificate);
+        writer.writeEndElement();
+    }
+
+    private void createX509CertificateElement(X509Certificate certificate) throws XMLStreamException, RecipientCertificateException {
+        writer.writeStartElement(xmlSigPrefix("X509Certificate"));
+
         try {
-            Element x509Certificate = document.createElement("ds:X509Certificate");
-            x509Certificate.setTextContent(Base64.toBase64String(certificate.getEncoded()));
-            x509Data.appendChild(x509Certificate);
+            writer.writeCharacters(Base64.toBase64String(certificate.getEncoded()));
         } catch (CertificateEncodingException e) {
             String message = "Error encoding certificate: " + certificate.getSubjectDN().getName();
             LOGGER.error(message, e);
             throw new RecipientCertificateException(message, e);
         }
-        encryptedKey.appendChild(keyInfo);
 
-        Element cipherData = document.createElement("denc:CipherData");
-        Element cipherValue = document.createElement("denc:CipherValue");
-        try {
-            byte[] encryptedKeyBytes = CryptUtil.encryptRsa(key.getEncoded(), certificate);
-            cipherValue.setTextContent(Base64.toBase64String(encryptedKeyBytes));
-        } catch (GeneralSecurityException e) {
-            String message = "Error encrypting secret key!";
-            LOGGER.error(message, e);
-            throw new EncryptionException(message, e);
-        }
-        cipherData.appendChild(cipherValue);
-        encryptedKey.appendChild(cipherData);
-
-        return encryptedKey;
+        writer.writeEndElement();
     }
 
-    protected Element createCipherData(SecretKey key, List<DataFile> dataFiles) throws CDOCException {
-        Element cipherData = document.createElement("denc:CipherData");
-        Element cipherValue = document.createElement("denc:CipherValue");
+    private void createRecipientCipherDataElement(X509Certificate certificate) throws XMLStreamException, EncryptionException {
+        writer.writeStartElement(xmlEncPrefix("CipherData"));
+        createRecipientCipherValueElement(certificate);
+        writer.writeEndElement();
+    }
 
-        byte[] dataToEncrypt;
+    private void createRecipientCipherValueElement(X509Certificate certificate) throws XMLStreamException, EncryptionException {
+        writer.writeStartElement(xmlEncPrefix("CipherValue"));
+
+        try {
+            byte[] encryptedKeyBytes = CryptUtil.encryptRsa(secretKey.getEncoded(), certificate);
+            writer.writeCharacters(Base64.toBase64String(encryptedKeyBytes));
+        } catch (GeneralSecurityException e) {
+            throw formEncryptionException("Error encrypting secret key!", e);
+        }
+
+        writer.writeEndElement();
+    }
+
+    private void createCipherDataElement() throws XMLStreamException, CDOCException {
+        writer.writeStartElement(xmlEncPrefix("CipherData"));
+        createdCipherValueElement();
+        writer.writeEndElement();
+    }
+
+    protected void createdCipherValueElement() throws XMLStreamException, CDOCException {
+        writer.writeStartElement(xmlEncPrefix("CipherValue"));
+
+        beginCharacterWriting(writer);
         if (dataFiles.size() > 1) {
             LOGGER.debug("Multiple data files set - composing data files DDOC..");
-            dataToEncrypt = constructDataFilesXml(dataFiles);
+            constructDataFilesXml();
         } else {
-            dataToEncrypt = dataFiles.get(0).getContent();
+            encryptAndBase64EncodeSingleDataFile();
         }
+
+        writer.writeEndElement();
+    }
+
+    protected void encryptAndBase64EncodeSingleDataFile() throws EncryptionException {
+        int blockSize = secretKey.getEncoded().length;
+        byte[] IV = CryptUtil.generateIV(blockSize);
+
+        try (ClosableBase64OutputStream base64EncoderStream = new ClosableBase64OutputStream(output)) {
+            base64EncoderStream.write(IV);
+            encryptDataFile(base64EncoderStream, dataFiles.get(0), IV, blockSize);
+        } catch (IOException e) {
+            throw formEncryptionException("Failed to base64 encode single data file content", e);
+        }
+    }
+
+    protected void encryptDataFile(OutputStream outputStream, DataFile dataFile, byte[] IV, int blockSize) throws EncryptionException {
+        try (InputStream dataToEncrypt = dataFile.getContent()) {
+            CryptUtil.encryptAesCbc(outputStream, dataToEncrypt, secretKey, IV, blockSize, dataFile.getSize());
+        } catch (IOException | GeneralSecurityException e) {
+            throw formEncryptionException("Error encrypting data file!", e);
+        }
+    }
+
+    protected void constructDataFilesXml() throws CDOCException, XMLStreamException {
+        int blockSize = secretKey.getEncoded().length;
+        byte[] iv = CryptUtil.generateIV(blockSize);
+        Cipher cipher = constructEncryptionCipher(iv);
+
+        XMLStreamWriter ddocWriter = null;
+        try (
+            ClosableBase64OutputStream base64EncoderStream = new ClosableBase64OutputStream(output);
+            CountingOutputStream cipherOutput = new CountingOutputStream(new CipherOutputStream(base64EncoderStream, cipher))
+        ) {
+            base64EncoderStream.write(iv);
+            ddocWriter = new IndentingXMLStreamWriter(factory.createXMLStreamWriter(cipherOutput));
+            constructAndEncryptDDOC(ddocWriter, cipherOutput);
+
+            PaddingUtil.addX923Padding(cipherOutput, cipherOutput.getByteCount(), blockSize);
+            PaddingUtil.addPkcs7Padding(cipherOutput, cipherOutput.getByteCount(), blockSize);
+        } catch (IOException | EncryptionException | XMLStreamException e) {
+            throw formXmlTransformException("Error transforming DDOC xml!", e);
+        } finally {
+            if (ddocWriter != null) {
+                ddocWriter.close();
+            }
+        }
+    }
+
+    private Cipher constructEncryptionCipher(byte[] iv) throws EncryptionException {
         try {
-            int blockSize = key.getEncoded().length;
-            byte[] iv = CryptUtil.generateIV(blockSize);
-            byte[] encryptedDataFiles = CryptUtil.encryptAesCbc(dataToEncrypt, key, iv);
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            byteArrayOutputStream.write(iv);
-            byteArrayOutputStream.write(encryptedDataFiles);
-
-            cipherValue.setTextContent(Base64.toBase64String(byteArrayOutputStream.toByteArray()));
-        } catch (GeneralSecurityException | IOException e) {
-            String message = "Error encrypting data files!";
-            LOGGER.error(message, e);
-            throw new EncryptionException(message, e);
+            Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));
+            return cipher;
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | NoSuchPaddingException | InvalidKeyException e) {
+            throw new EncryptionException("Failed to construct AES CBC cipher", e);
         }
-
-        cipherData.appendChild(cipherValue);
-        return cipherData;
     }
 
-    public byte[] constructDataFilesXml(List<DataFile> dataFiles) throws CDOCException {
-        Document doc = XMLDocumentBuilder.createDocument();
-        Element signedDoc = doc.createElement("SignedDoc");
-        signedDoc.setAttribute("xmlns", "http://www.sk.ee/DigiDoc/v1.3.0#");
-        signedDoc.setAttribute("format", "DIGIDOC-XML");
-        signedDoc.setAttribute("version", "1.3");
-
-        int i = 0;
-        for (DataFile dataFile : dataFiles) {
-            Element datafile = doc.createElement("DataFile");
-            datafile.setAttribute("ContentType", "EMBEDDED_BASE64");
-            datafile.setAttribute("Filename", dataFile.getFileName());
-            datafile.setAttribute("MimeType", "application/octet-stream");
-            datafile.setAttribute("Size", String.valueOf(dataFile.getContent().length));
-            datafile.setAttribute("Id", "D" + i++);
-            datafile.setTextContent(Base64.toBase64String(dataFile.getContent()));
-            signedDoc.appendChild(datafile);
-        }
-
-        doc.appendChild(signedDoc);
-        return transformToXml(doc);
+    protected void constructAndEncryptDDOC(XMLStreamWriter streamWriter, OutputStream cipherOutputStream) throws XMLStreamException, EncryptionException {
+        streamWriter.writeStartDocument(StandardCharsets.UTF_8.name(), "1.0");
+        createSignedDocElement(cipherOutputStream, streamWriter);
+        streamWriter.writeEndDocument();
     }
 
-    protected Element createEncryptionProperties(List<DataFile> dataFiles) {
-        Element encryptionProperties = document.createElement("denc:EncryptionProperties");
+    private void createSignedDocElement(OutputStream cipherOutput, XMLStreamWriter innerWriter) throws XMLStreamException, EncryptionException {
+        innerWriter.writeStartElement("SignedDoc");
+        innerWriter.writeDefaultNamespace("http://www.sk.ee/DigiDoc/v1.3.0#");
+        innerWriter.writeAttribute("format", "DIGIDOC-XML");
+        innerWriter.writeAttribute("version", "1.3");
+
+        for (int i = 0; i < dataFiles.size(); i++) {
+            createDataFileElement(cipherOutput, innerWriter, i);
+        }
+
+        innerWriter.writeEndElement();
+    }
+
+    private void createDataFileElement(OutputStream cipherOutput, XMLStreamWriter innerWriter, int dataFileCounter) throws XMLStreamException, EncryptionException {
+        DataFile dataFile = dataFiles.get(dataFileCounter);
+        innerWriter.writeStartElement("DataFile");
+        innerWriter.writeAttribute("ContentType", "EMBEDDED_BASE64");
+        innerWriter.writeAttribute("Filename", dataFile.getName());
+        innerWriter.writeAttribute("Id", "D" + dataFileCounter);
+        innerWriter.writeAttribute("MimeType", "application/octet-stream");
+        innerWriter.writeAttribute("Size", String.valueOf(dataFile.getSize()));
+
+        try (
+                ClosableBase64OutputStream base64Output = new ClosableBase64OutputStream(cipherOutput);
+                InputStream inputStream = dataFile.getContent()
+        ) {
+            beginCharacterWriting(innerWriter);
+            IOUtils.copy(inputStream, base64Output, 1024);
+        } catch (IOException e) {
+            throw formEncryptionException("Failed to base64 encode DDOC content", e);
+        }
+
+        innerWriter.writeEndElement();
+    }
+
+    private void createEncryptionPropertiesElement() throws XMLStreamException {
+        writer.writeStartElement(xmlEncPrefix("EncryptionProperties"));
+
         if (dataFiles.size() > 1)  {
-            String ddocFileName = FilenameUtils.removeExtension(dataFiles.get(0).getFileName()) + ".ddoc";
-            encryptionProperties.appendChild(createEncryptionProperty("Filename", ddocFileName));
+            String ddocFileName = FilenameUtils.removeExtension(dataFiles.get(0).getName()) + ".ddoc";
+            createEncryptionPropertyElement("Filename", ddocFileName);
         } else {
-            encryptionProperties.appendChild(createEncryptionProperty("Filename", dataFiles.get(0).getFileName()));
+            createEncryptionPropertyElement("Filename", dataFiles.get(0).getName());
         }
-        encryptionProperties.appendChild(createEncryptionProperty("DocumentFormat", getEncDocXmlVersion()));
-        encryptionProperties.appendChild(createEncryptionProperty("LibraryVersion", "cdoc4j|1.0"));
-        int i = 0;
+
+        createEncryptionPropertyElement("DocumentFormat", getEncDocXmlVersion());
+        createEncryptionPropertyElement("LibraryVersion", "cdoc4j|1.0");
+
+        int fileCount = 0;
         for (DataFile dataFile : dataFiles) {
             String propertyValue = new StringBuilder()
-                    .append(dataFile.getFileName())
+                    .append(dataFile.getName())
                     .append("|")
-                    .append(dataFile.getContent().length)
+                    .append(dataFile.getSize())
                     .append("|")
                     .append("application/octet-stream")
                     .append("|")
-                    .append("D" + i++)
+                    .append("D" + fileCount++)
                     .toString();
-            encryptionProperties.appendChild(createEncryptionProperty("orig_file", propertyValue));
+            createEncryptionPropertyElement("orig_file", propertyValue);
         }
-        return encryptionProperties;
+
+        writer.writeEndElement();
     }
 
-    protected Element createEncryptionProperty(String attributeValue, String propertyValue) {
-        Element encryptionProperty = document.createElement("denc:EncryptionProperty");
-        encryptionProperty.setAttribute("Name", attributeValue);
-        encryptionProperty.setTextContent(propertyValue);
-        return encryptionProperty;
-    }
-
-    protected byte[] transformToXml(Node node) throws XmlTransformException {
-        try {
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer = transformerFactory.newTransformer();
-            transformer.setOutputProperty(OutputKeys.ENCODING, ENCODING);
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-            DOMSource source = new DOMSource(node);
-            StringWriter strWriter = new StringWriter();
-            StreamResult result = new StreamResult(strWriter);
-            transformer.transform(source, result);
-            return strWriter.getBuffer().toString().getBytes(ENCODING);
-        } catch (TransformerException | UnsupportedEncodingException e) {
-            String message = "Error transforming XML!";
-            LOGGER.error(message, e);
-            throw new XmlTransformException(message, e);
-        }
+    protected void createEncryptionPropertyElement(String attributeValue, String propertyValue) throws XMLStreamException {
+        writer.writeStartElement(xmlEncPrefix("EncryptionProperty"));
+        writer.writeAttribute("Name", attributeValue);
+        writer.writeCharacters(propertyValue);
+        writer.writeEndElement();
     }
 
     protected String getEncDocXmlVersion() {
         return ENCDOC_XML_VERSION;
     }
 
-} 
+    protected String xmlEncPrefix(String elementName) {
+        return XML_ENCRYPTION_NAMESPACE_PREFIX + ":" + elementName;
+    }
+
+    protected String xmlSigPrefix(String elementName) {
+        return XML_SINGATURE_NAMESPACE_PREFIX + ":" + elementName;
+    }
+
+    protected EncryptionException formEncryptionException(String errorMessage, Exception exception) {
+        LOGGER.error(errorMessage, exception);
+        return new EncryptionException(errorMessage, exception);
+    }
+
+    protected XmlTransformException formXmlTransformException(String errorMessage, Exception exception) {
+        LOGGER.error(errorMessage, exception);
+        return new XmlTransformException(errorMessage, exception);
+    }
+
+    // Necessary when writing raw characters, otherwise content is written inside current element starting tag
+    private void beginCharacterWriting(XMLStreamWriter streamWriter) throws XMLStreamException {
+        streamWriter.writeCharacters("");
+    }
+}

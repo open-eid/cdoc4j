@@ -1,12 +1,17 @@
 package org.openeid.cdoc4j.crypto;
 
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
@@ -31,35 +36,25 @@ public class CryptUtil {
         return cipher.doFinal(bytesToDecrypt);
     }
 
-    public static byte[] encryptAesCbc(byte[] bytesToEncrypt, SecretKey key, byte[] iv) throws IOException, GeneralSecurityException {
-        int blockSize = key.getEncoded().length;
-        bytesToEncrypt = PaddingUtil.addX923Padding(bytesToEncrypt, blockSize);
-        bytesToEncrypt = PaddingUtil.addPkcs7Padding(bytesToEncrypt, blockSize);
+    public static void encryptAesCbc(OutputStream output, InputStream dataToEncrypt, SecretKey key, byte[] IV, int blockSize, long fileSize) throws IOException, GeneralSecurityException {
         Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv));
-        return cipher.doFinal(bytesToEncrypt);
+        cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(IV));
+
+        try (OutputStream cipherOutput = new BufferedOutputStream(new CipherOutputStream(output, cipher))) {
+            IOUtils.copy(dataToEncrypt, cipherOutput, 1024);
+            int paddedBytes = PaddingUtil.addX923Padding(cipherOutput, fileSize, blockSize);
+            PaddingUtil.addPkcs7Padding(cipherOutput, fileSize + paddedBytes, blockSize);
+        }
     }
 
-    public static byte[] decryptAesCbc(byte[] bytesToDecrypt, SecretKey key, byte[] iv) throws IOException, GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
-        byte[] decryptedBytes = cipher.doFinal(bytesToDecrypt);
-        decryptedBytes = PaddingUtil.removePkcs7Padding(decryptedBytes);
-        decryptedBytes = PaddingUtil.removeX923Padding(decryptedBytes);
-        return decryptedBytes;
-    }
-
-    public static byte[] encryptAesGcm(byte[] bytesToEncrypt, SecretKey key, byte[] iv) throws GeneralSecurityException {
+    public static void encryptAesGcm(OutputStream output, InputStream dataToEncrypt, SecretKey key, byte[] IV) throws IOException, GeneralSecurityException {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        GCMParameterSpec params = new GCMParameterSpec(128, iv);
+        GCMParameterSpec params = new GCMParameterSpec(128, IV);
         cipher.init(Cipher.ENCRYPT_MODE, key, params);
-        return cipher.doFinal(bytesToEncrypt);
-    }
 
-    public static byte[] decryptAesGcm(byte[] bytesToDecrypt, SecretKey key, byte[] iv) throws IOException, GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(128, iv));
-        return cipher.doFinal(bytesToDecrypt);
+        try (OutputStream cipherOutput = new CipherOutputStream(output, cipher)) {
+            IOUtils.copy(dataToEncrypt, cipherOutput, 1024);
+        }
     }
 
     public static byte[] generateIV(int blockSize) {
@@ -67,5 +62,4 @@ public class CryptUtil {
         new SecureRandom().nextBytes(iv);
         return iv;
     }
-
 } 

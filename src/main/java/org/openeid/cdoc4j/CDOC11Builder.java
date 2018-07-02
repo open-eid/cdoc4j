@@ -1,5 +1,6 @@
 package org.openeid.cdoc4j;
 
+import org.apache.commons.io.IOUtils;
 import org.openeid.cdoc4j.crypto.KeyGenUtil;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.xml.XmlEnc11Composer;
@@ -23,14 +24,19 @@ public class CDOC11Builder extends CDOCBuilder {
     private static final Logger LOGGER = LoggerFactory.getLogger(CDOC11Builder.class);
 
     @Override
-    public byte[] build() throws CDOCException {
-        validateParameters();
+    public void build() throws CDOCException {
+        try {
+            validateParameters();
 
-        SecretKey key = KeyGenUtil.generateDataEncrytionKey(32);
-        LOGGER.info("Start composing CDOC");
-        byte[] cdocBytes = new XmlEnc11Composer().constructXML(EncryptionMethod.AES_256_GCM, key, recipients, dataFiles);
-        LOGGER.info("CDOC composed successfully!");
-        return cdocBytes;
+            SecretKey key = KeyGenUtil.generateDataEncryptionKey(32);
+            LOGGER.info("Start composing CDOC");
+            new XmlEnc11Composer().constructXML(EncryptionMethod.AES_256_GCM, key, recipients, dataFiles, output);
+            LOGGER.info("CDOC composed successfully!");
+        } finally {
+            IOUtils.closeQuietly(this.output);
+            for (DataFile dataFile : dataFiles) {
+                IOUtils.closeQuietly(dataFile.getContent());
+            }
+        }
     }
-
 }

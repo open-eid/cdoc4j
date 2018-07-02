@@ -1,53 +1,43 @@
 package org.openeid.cdoc4j.crypto;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Arrays;
 
 public final class PaddingUtil {
 
     private PaddingUtil() {}
 
-    public static byte[] addX923Padding(byte[] bytesToPad, int blockSize) throws IOException {
-        int padLength = blockSize - (bytesToPad.length % blockSize);
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        outputStream.write(bytesToPad);
+    public static int addX923Padding(OutputStream dataStream, long fileSize, int blockSize) throws IOException {
+        int padLength = (int) (blockSize - (fileSize % blockSize));
 
         for (int i = 0; i < padLength - 1 ; i++) {
-            outputStream.write(0x00);
+            dataStream.write(0x00);
         }
-        outputStream.write((byte) padLength);
-        return outputStream.toByteArray();
+        dataStream.write((byte) padLength);
+
+        return padLength;
     }
 
     public static byte[] removeX923Padding(byte[] bytes) {
         int padLength = bytes[bytes.length - 1];
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        outputStream.write(bytes, 0, bytes.length - padLength);
-        return outputStream.toByteArray();
+        return Arrays.copyOfRange(bytes, 0, bytes.length - padLength);
     }
 
-    public static byte[] addPkcs7Padding(byte[] bytesToPad, int blockSize) throws IOException {
-        int padLength = blockSize - (bytesToPad.length % blockSize);
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        outputStream.write(bytesToPad);
+    public static int addPkcs7Padding(OutputStream dataStream, long fileSize, int blockSize) throws IOException {
+        int padLength = (int) (blockSize - (fileSize % blockSize));
 
         for (int i = 0; i < padLength ; i++) {
-            outputStream.write((byte) padLength);
+            dataStream.write((byte) padLength);
         }
-        return outputStream.toByteArray();
+
+        return padLength;
     }
 
     public static byte[] removePkcs7Padding(byte[] bytes) {
         int padLength = bytes[bytes.length - 1];
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        outputStream.write(bytes, 0, bytes.length - padLength);
-        return outputStream.toByteArray();
+        return Arrays.copyOfRange(bytes, 0, bytes.length - padLength);
     }
-
-
 
 } 

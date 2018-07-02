@@ -1,5 +1,6 @@
 package org.openeid.cdoc4j;
 
+import org.apache.commons.io.IOUtils;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.DataFileMissingException;
 import org.openeid.cdoc4j.exception.RecipientCertificateException;
@@ -7,11 +8,7 @@ import org.openeid.cdoc4j.exception.RecipientMissingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
+import java.io.*;
 import java.nio.file.Path;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -37,6 +34,7 @@ public abstract class CDOCBuilder {
 
     protected List<X509Certificate> recipients = new ArrayList<>();
     protected List<DataFile> dataFiles = new ArrayList<>();
+    protected OutputStream output;
 
     /**
      * Constructs an instance of {@link CDOCBuilder} for the desired version of CDOC
@@ -84,9 +82,7 @@ public abstract class CDOCBuilder {
      * @return this builder
      */
     public CDOCBuilder withDataFile(Path path) throws IOException {
-        byte[] data = Files.readAllBytes(path);
-        DataFile dataFile = new DataFile(path.getFileName().toString(), data);
-        return withDataFile(dataFile);
+        return withDataFile(path.toFile());
     }
 
     /**
@@ -97,8 +93,9 @@ public abstract class CDOCBuilder {
      * @return this builder
      */
     public CDOCBuilder withDataFile(File file) throws IOException {
-        Path path = file.toPath();
-        return withDataFile(path);
+        FileInputStream fis = new FileInputStream(file);
+        DataFile dataFile = new DataFile(file.getName(), fis, file.length());
+        return withDataFile(dataFile);
     }
 
     /**
@@ -138,12 +135,13 @@ public abstract class CDOCBuilder {
         try {
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
             X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(inputStream);
-            inputStream.close();
             return withRecipient(certificate);
-        } catch (CertificateException | IOException e) {
+        } catch (CertificateException e) {
             String message = "Error reading certificate from input stream!";
             LOGGER.error(message, e);
             throw new RecipientCertificateException(message, e);
+        } finally {
+            IOUtils.closeQuietly(inputStream);
         }
     }
 
@@ -161,17 +159,29 @@ public abstract class CDOCBuilder {
         return this;
     }
 
-    /**
-     * builds the CDOC to the given output stream
-     *
-     * @param outputStream where the built CDOC content bytes shall be written to
-     * @throws CDOCException when there is an error building CDOC
-     * @throws IOException when there is an error writing the CDOC into the given outputstream
-     */
-    public void buildToOutputStream(OutputStream outputStream) throws CDOCException, IOException {
-        byte[] cdocBytes = build();
-        outputStream.write(cdocBytes);
-        outputStream.close();
+    public void buildToFile(File file) throws CDOCException, FileNotFoundException {
+        this.output = new FileOutputStream(file);
+        build();
+    }
+
+    public ByteArrayInputStream buildToByteArrayInputStream() throws CDOCException {
+        this.output = new ByteArrayOutputStream();
+        build();
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(((ByteArrayOutputStream) output).toByteArray());
+        return inputStream;
+    }
+
+    @Deprecated
+    public byte[] buildToByteArray() throws CDOCException {
+        this.output = new ByteArrayOutputStream();
+        build();
+        byte[] bytes = ((ByteArrayOutputStream) output).toByteArray();
+        return bytes;
+    }
+
+    public void buildToOutputStream(OutputStream outputStream) throws CDOCException {
+        this.output = outputStream;
+        build();
     }
 
     /**
@@ -180,7 +190,7 @@ public abstract class CDOCBuilder {
      * @return cdoc content bytes
      * @throws CDOCException when there is an error building CDOC
      */
-    public abstract byte[] build() throws CDOCException;
+    abstract void build() throws CDOCException;
 
     protected void validateParameters() throws CDOCException {
         if (dataFiles == null || dataFiles.isEmpty()) {
@@ -206,8 +216,5 @@ public abstract class CDOCBuilder {
             LOGGER.error(message);
             throw new RecipientCertificateException(message);
         }
-
-
     }
-
 }

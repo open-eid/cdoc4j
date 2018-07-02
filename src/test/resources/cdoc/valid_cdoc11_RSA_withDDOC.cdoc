@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><denc:EncryptedData xmlns:denc="http://www.w3.org/2001/04/xmlenc#" MimeType="http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd">
+  <denc:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes256-gcm"/>
+  <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+    <denc:EncryptedKey Recipient="ŽÕRINÜWŠKY\,MÄRÜ-LÖÖZ\,11404176865">
+      <denc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-1_5"/>
+      <ds:KeyInfo>
+        <ds:X509Data>
+          <ds:X509Certificate>MIIF1DCCA7ygAwIBAgIQC/6uyaMZ421XDit5VETiUTANBgkqhkiG9w0BAQsFADBrMQswCQYDVQQGEwJFRTEiMCAGA1UECgwZQVMgU2VydGlmaXRzZWVyaW1pc2tlc2t1czEXMBUGA1UEYQwOTlRSRUUtMTA3NDcwMTMxHzAdBgNVBAMMFlRFU1Qgb2YgRVNURUlELVNLIDIwMTUwHhcNMTYwNDEzMTEyMDI1WhcNMjEwNDEyMjA1OTU5WjCBsTELMAkGA1UEBhMCRUUxDzANBgNVBAoMBkVTVEVJRDEXMBUGA1UECwwOYXV0aGVudGljYXRpb24xMTAvBgNVBAMMKMW9w5VSSU7DnFfFoEtZLE3DhFLDnC1Mw5bDllosMTE0MDQxNzY4NjUxFzAVBgNVBAQMDsW9w5VSSU7DnFfFoEtZMRYwFAYDVQQqDA1Nw4RSw5wtTMOWw5ZaMRQwEgYDVQQFEwsxMTQwNDE3Njg2NTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKcB/jAESlJn6BMuE+Oj0h0HV5gjXQ0ZKPTJVb0V9tu2UJa6h9FG4V2ZIpI8U+mZG2UmWqBJjw0h8IGbV3N2tQ+323e/1YsGfNVUpRd/12dn9ccvJAsX2IdbqS122zOxFE8tGB7F/EVk/ggLH0JWzaRyTu5Dk/C0cNFydqVjmOVqRCmsI3aML4X82s/kkzx6DhbFGHHc03Hwmgz1t4poCAjCpr7F5BWbqASUlNigfFojbePzcWeiyJeK3TzjZqnDLq28nwIcZo0MbFIg2isqnM2eOt6LKWuca5UXY9GhVqSaoDVBy8i1qIza92xS301Zeq2UVSZg/TDnH5SfZkSy6dcCAwEAAaOCASswggEnMAkGA1UdEwQCMAAwDgYDVR0PAQH/BAQDAgSwMDsGA1UdIAQ0MDIwMAYJKwYBBAHOHwMBMCMwIQYIKwYBBQUHAgEWFWh0dHBzOi8vd3d3LnNrLmVlL2NwczAoBgNVHREEITAfgR1tYXJ1LWxvb3ouem9yaW51d3NreUBlZXN0aS5lZTAdBgNVHQ4EFgQUeijrZltEgGN0zIbTvAsIHiEJWCYwIAYDVR0lAQH/BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMB8GA1UdIwQYMBaAFEnA8kQ5ZdWbRjsNOGCDsdYtKIamMEEGA1UdHwQ6MDgwNqA0oDKGMGh0dHA6Ly93d3cuc2suZWUvY3Jscy9lc3RlaWQvdGVzdF9lc3RlaWQyMDE1LmNybDANBgkqhkiG9w0BAQsFAAOCAgEAi7EjbQ2I6mbo7/xg3s1SLYvlkxMQZ9HwB3pCZ/MtgdanTbLD51jliBqxxRn7sMSf7Na7WZEzbdV2+zIgIFO3ebBHDHj2kMGFfMX5ky/dvuhlY9r3t5+/XAb69UbXTleBOSpkf2b6OGb2gkdcXp5M2lLyl4cNqi8q6bhtU6M/8DsSRGUBAZ4XjT2eQMR4DIJld6+rW//EcpE7Kmi+9maJDFX5YSi/lW9DKqFb8mQEOKIFgr2eq3ma+Ge7uRePi4pMNkknCQlE1EB4dlTqa45Q+KkEf5VHKLCJXRjSd5G+0rDHy/7GvrdR1a9gnifyWD9u9MkIeMLq7A3f0cuY00BV4ojsb5+N4blNuYhSm30Y2kt2xoYD6lKPsWQ/HWFtnm+TzguT+H5YIXi+cu2oZeb3G3qcM2AQjOkBtPpnW9QnNQjH4sSizMy03kIVdk2Bn1WjJDOd24HZEe+D6DjcusXtWmQ+zPjks44bQBSlYkcJLFmCpyc817jt1IODcIwydfo0qEZRYFHcFnPBE8xdKOFL671gyhAsnpfQ9Wh1Y02XQyO9J23fUkEmNuunwayeV7ZLlaznfFYZratFJfX13Fy/fgtME+x3GGNMMz4w0JDAdz21X0pglxYBqw2vJMN/g7N8R1Fs47KKMzPtwqj74Q4+IVb4QiSbmb4YEPqM/JSh3HY=</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+      <denc:CipherData>
+        <denc:CipherValue>lJLnCPn2AjfD9G66vsiOl8+anufNqq8YDKknaOwysWlC/PJ2ccdLqecPcVaHm82+xbvDellm78BXsvUUut+1vq0MGmprHofF4hknR+6IyesclmSqAqM61j5pHw6MrAEWK89I1k4Bg5lxylqAOozv5T5LSfZjBm9vc3fjHuLPknXDwtsl203kQ7lCz/cBVp3g2G4nkLzA8JITxp6k/xFL25OSPQxePzJVdtbHRqzs+Xbamnr24u7HqaIQllWBY5xyqgptmiwlhM0iUntCB2elrFs/Y19vqLeIXa6s99BoEe33OFELR+MvmITtr5o9fVMovxyV5BD8BGnno/Gr1qjNgg==</denc:CipherValue>
+      </denc:CipherData>
+    </denc:EncryptedKey>
+  </ds:KeyInfo>
+  <denc:CipherData>
+    <denc:CipherValue>KARhkAyuzqGRSxBc2OnBzo4DO2MvKnbh/XUSBc4NLrvzrSHdqtbR2DfX82ZJjvFV16ZFHyexqXu9hz4kh9hR04yBHP5Gw8vpBLzVBruQRuHCwpcbacWgDeI5KVaE7+Kn7tr7788OBmYlBgIOsbOSHAhl5sGMWI/myyrrrPtGE9lDMOY6udno5zS2hr4ndBPtyALBvdJl9E17AoDCKwb9iRQsevhUUzEEzMgmKHpoWLOSJnvnVbRuFG8Nd4dXjDtMloIgedzGDgVU1CY+D9VM1NTyO6LrASS65fFrhOyoHxz1YIIYcfT9i6IT3VVOV/UpBQ5ks4XsiQj5v82P5FFxT2WJLZb9IFJElSKy2iGOG/2goRbFQ5ht2I0v4WGA7FEMRKHaqggAQ/yHIO3RArCHYpheCHHevqNMq0Vud8WNww2NqR7gu36awAP5HsXPiv5KtH/MkFgEMoAd76u0aIN9gC4zRHnohMagNrOH9PlBjE26Stu35oNMnPRUcUHtSxCzAyb8o3JrUsHMTPfCCgLFH7DMnNY8lfHN1LGUab+onXFjTthbR5Dp0PJk0REDR/wSJpL0EqwtpbQeco8JEz6R5ukemKXlUNJEQgXFqA85zchSWStw1e4Hwf0y3+hTmzGRnMY5</denc:CipherValue>
+  </denc:CipherData>
+  <denc:EncryptionProperties>
+    <denc:EncryptionProperty Name="Filename">lorem1.ddoc</denc:EncryptionProperty>
+    <denc:EncryptionProperty Name="DocumentFormat">ENCDOC-XML|1.1</denc:EncryptionProperty>
+    <denc:EncryptionProperty Name="LibraryVersion">cdoc4j|1.0</denc:EncryptionProperty>
+    <denc:EncryptionProperty Name="orig_file">lorem1.txt|11|application/octet-stream|D0</denc:EncryptionProperty>
+    <denc:EncryptionProperty Name="orig_file">lorem2.txt|26|application/octet-stream|D1</denc:EncryptionProperty>
+  </denc:EncryptionProperties>
+</denc:EncryptedData>
