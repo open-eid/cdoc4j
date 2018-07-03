@@ -1,6 +1,6 @@
 package org.openeid.cdoc4j.xml;
 
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -47,7 +47,7 @@ public class XmlEnc11Parser extends XmlEncParser {
     @Override
     protected OutputStream constructCipherOutputStream(OutputStream output, SecretKey key, byte[] IV) {
         KeyParameter secretKey = new KeyParameter(key.getEncoded());
-        AEADBlockCipher cipher = new GCMBlockCipher(new AESFastEngine());
+        AEADBlockCipher cipher = new GCMBlockCipher(new AESEngine());
         cipher.init(false, new AEADParameters(secretKey, 128, IV));
         return new DecryptionCipherOutputStream(output, cipher, IV);
     }

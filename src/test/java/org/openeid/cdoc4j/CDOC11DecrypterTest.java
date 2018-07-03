@@ -244,29 +244,6 @@ public class CDOC11DecrypterTest {
                 .decryptToByteArrayInputStream();
     }
 
-
-    @Ignore("Requires SmartCard with its Reader to be connected to the machine")
-    @Test
-    public void buildAndDecryptCDOC_withPKCS11_shouldSucceed() throws Exception {
-        String fileContent = "test CDOC 1.1 with PKCS#11";
-        DataFile dataFile = new DataFile("test.txt", fileContent.getBytes());
-
-        InputStream certificateInputStream = getClass().getResourceAsStream("/path/to/cert"); // set desired certificate
-        byte[] cdoc = CDOCBuilder.version("1.1")
-                .withDataFile(dataFile)
-                .withRecipient(certificateInputStream)
-                .buildToByteArray();
-
-        PKCS11TokenParams params = new PKCS11TokenParams("/usr/local/lib/onepin-opensc-pkcs11.so", "DO NOT COMMIT YOUR PIN!".toCharArray(), 0);
-        PKCS11Token token = new PKCS11Token(params);
-        List<DataFile> dataFiles = new CDOCDecrypter()
-                .withToken(token)
-                .withCDOC(new ByteArrayInputStream(cdoc))
-                .decryptToByteArrayInputStream();
-
-        assertByteStreamDataFileContent(dataFiles.get(0), dataFile.getName(), fileContent);
-    }
-
     @Test
     public void buildAndDecryptCDOC11_emptyFile_shouldSucceed() throws Exception {
         File fileToWriteToCDOC = new File("src/test/resources/cdoc/empty_file.txt");
@@ -294,4 +271,27 @@ public class CDOC11DecrypterTest {
                 .withCDOC(cdocInputStream)
                 .decryptToByteArrayInputStream();
     }
+
+    @Ignore("Requires SmartCard with its Reader to be connected to the machine")
+    @Test
+    public void buildAndDecryptCDOC_withPKCS11_shouldSucceed() throws Exception {
+        String fileContent = "test CDOC 1.1 with PKCS#11";
+        DataFile dataFile = new DataFile("test.txt", fileContent.getBytes());
+
+        InputStream certificateInputStream = getClass().getResourceAsStream("/path/to/cert"); // set desired certificate
+        byte[] cdoc = CDOCBuilder.version("1.1")
+                .withDataFile(dataFile)
+                .withRecipient(certificateInputStream)
+                .buildToByteArray();
+
+        PKCS11TokenParams params = new PKCS11TokenParams("/usr/local/lib/onepin-opensc-pkcs11.so", "DO NOT COMMIT YOUR PIN!".toCharArray(), 0);
+        PKCS11Token token = new PKCS11Token(params);
+        List<DataFile> dataFiles = new CDOCDecrypter()
+                .withToken(token)
+                .withCDOC(new ByteArrayInputStream(cdoc))
+                .decryptToByteArrayInputStream();
+
+        assertByteStreamDataFileContent(dataFiles.get(0), dataFile.getName(), fileContent);
+    }
+
 }

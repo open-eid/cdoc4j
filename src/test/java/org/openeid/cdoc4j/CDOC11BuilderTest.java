@@ -1,7 +1,5 @@
 package org.openeid.cdoc4j;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.DataFileMissingException;
@@ -15,7 +13,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.openeid.cdoc4j.TestLogMemory.logMemoryUsage;
 import static org.openeid.cdoc4j.TestUtil.assertStreamClosed;
 import static org.openeid.cdoc4j.TestUtil.mockDataFile;
 
@@ -27,16 +24,6 @@ public class CDOC11BuilderTest {
     private InputStream rsaSignCertificate = getClass().getResourceAsStream("/rsa/sign_cert.pem");
     private InputStream eccAuthCertificate = getClass().getResourceAsStream("/ecc/auth_cert.pem");
     private InputStream eccSignCertificate = getClass().getResourceAsStream("/ecc/sign_cert.pem");
-
-    @Before
-    public void init() {
-        logMemoryUsage("START 1");
-    }
-
-    @After
-    public void after() {
-        logMemoryUsage("END");
-    }
 
     @Test(expected = RecipientMissingException.class)
     public void buildCDOC11_withoutRecipient_shouldThrowException() throws CDOCException {

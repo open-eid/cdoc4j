@@ -1,7 +1,5 @@
 package org.openeid.cdoc4j;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.DecryptionException;
@@ -13,23 +11,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.openeid.cdoc4j.TestLogMemory.logMemoryUsage;
 import static org.openeid.cdoc4j.TestUtil.*;
 
 public class CDOC10DecrypterTest {
 
     private final String version = "1.0";
     private final String testFileName = "test.txt";
-
-    @Before
-    public void init() {
-        logMemoryUsage("START 1");
-    }
-
-    @After
-    public void after() {
-        logMemoryUsage("END");
-    }
 
     @Test(expected = DecryptionException.class)
     public void decryptCDOC10_withoutToken_shouldThrowException() throws CDOCException, FileNotFoundException {

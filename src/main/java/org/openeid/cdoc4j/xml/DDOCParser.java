@@ -1,8 +1,8 @@
 package org.openeid.cdoc4j.xml;
 
-import org.apache.commons.codec.binary.Base64OutputStream;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.stream.CustomOutputStreamWriter;
+import org.openeid.cdoc4j.stream.base64.Base64OutputStream;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

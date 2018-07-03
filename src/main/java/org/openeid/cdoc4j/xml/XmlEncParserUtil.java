@@ -1,7 +1,7 @@
 package org.openeid.cdoc4j.xml;
 
-import org.apache.commons.codec.binary.StringUtils;
 import org.openeid.cdoc4j.stream.CustomOutputStreamWriter;
+import org.openeid.cdoc4j.stream.base64.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
