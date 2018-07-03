@@ -23,6 +23,9 @@ public class DDOCParser {
 
     public DDOCParser(InputStream inputStream, File fileDestinationDirectory) throws XMLStreamException {
         XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
+        xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false); // This disables DTDs entirely for that factory
+        xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false); // disable external entities
+
         xmlReader = xmlInputFactory.createXMLStreamReader(inputStream);
         this.fileDestinationDirectory = fileDestinationDirectory;
     }

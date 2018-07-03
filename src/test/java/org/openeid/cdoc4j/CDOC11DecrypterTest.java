@@ -2,7 +2,6 @@ package org.openeid.cdoc4j;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.openeid.cdoc4j.exception.DecryptionException;
 import org.openeid.cdoc4j.token.pkcs11.PKCS11Token;
 import org.openeid.cdoc4j.token.pkcs11.PKCS11TokenParams;
 import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
@@ -19,6 +18,7 @@ import static org.junit.Assert.assertSame;
 import static org.openeid.cdoc4j.TestUtil.*;
 
 public class CDOC11DecrypterTest {
+
     private final String version = "1.1";
     private final String testFileName = "test.txt";
 
@@ -233,7 +233,7 @@ public class CDOC11DecrypterTest {
         assertByteStreamDataFileContent(decryptedDataFiles.get(0), dataFile.getName(), dataFileContent.getBytes());
     }
 
-    @Test(expected = DecryptionException.class)
+    @Test(expected = XmlParseException.class)
     public void decryptCDOC11_withEntityExpansionAttack_shouldThrowException() throws Exception {
         InputStream cdocInputStream = getClass().getResourceAsStream("/cdoc/1.0-XXE.cdoc");
 

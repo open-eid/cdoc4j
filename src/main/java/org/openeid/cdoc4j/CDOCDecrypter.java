@@ -114,6 +114,9 @@ public class CDOCDecrypter {
         validateParameters();
 
         XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
+        xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false); // This disables DTDs entirely for that factory
+        xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false); // disable external entities
+
         XMLStreamReader xmlReader = null;
         try {
             xmlReader = xmlInputFactory.createXMLStreamReader(cdocInputStream);
