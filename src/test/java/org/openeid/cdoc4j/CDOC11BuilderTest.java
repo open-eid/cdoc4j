@@ -84,7 +84,7 @@ public class CDOC11BuilderTest {
                 .withRecipient(rsaAuthCertificate)
                 .buildToByteArray();
 
-        assertEquals(3661, cdocBytes.length);
+        assertEquals(3659, cdocBytes.length);
         assertStreamClosed(dataFile.getContent());
         assertStreamClosed(rsaAuthCertificate);
     }
@@ -102,7 +102,7 @@ public class CDOC11BuilderTest {
 
             assertTrue(inputStream instanceof ByteArrayInputStream);
             int contentLength = ((ByteArrayInputStream) inputStream).available();
-            assertEquals(8037, contentLength);
+            assertEquals(8035, contentLength);
             assertStreamClosed(dataFile.getContent());
             assertStreamClosed(eccAuthCertificate);
 
@@ -129,7 +129,7 @@ public class CDOC11BuilderTest {
 
             assertTrue(inputStream instanceof ByteArrayInputStream);
             int contentLength = ((ByteArrayInputStream) inputStream).available();
-            assertEquals(4385, contentLength);
+            assertEquals(4383, contentLength);
 
             for (DataFile dataFile : dataFiles) {
                 assertStreamClosed(dataFile.getContent());
@@ -152,7 +152,7 @@ public class CDOC11BuilderTest {
                     .withRecipient(rsaAuthCertificate)
                     .buildToFile(destinationFile);
 
-            assertEquals(3657, destinationFile.length());
+            assertEquals(3655, destinationFile.length());
             assertStreamClosed(dataFile.getContent());
             assertStreamClosed(rsaAuthCertificate);
         }
@@ -176,7 +176,7 @@ public class CDOC11BuilderTest {
                     .withRecipient(rsaAuthCertificate)
                     .buildToFile(destinationFile);
 
-            assertEquals(4385, destinationFile.length());
+            assertEquals(4383, destinationFile.length());
             for (DataFile dataFile : dataFiles) {
                 assertStreamClosed(dataFile.getContent());
             }
@@ -201,7 +201,7 @@ public class CDOC11BuilderTest {
                     .withRecipient(rsaAuthCertificate)
                     .buildToOutputStream(output);
 
-            assertEquals(4385, output.size());
+            assertEquals(4383, output.size());
             for (DataFile dataFile : dataFiles) {
                 assertStreamClosed(dataFile.getContent());
             }

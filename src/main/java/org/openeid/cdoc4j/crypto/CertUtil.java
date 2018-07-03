@@ -22,7 +22,7 @@ public class CertUtil {
         try {
             X500Name x500name = new JcaX509CertificateHolder(certificate).getSubject();
             RDN cn = x500name.getRDNs(BCStyle.CN)[0];
-            return IETFUtils.valueToString(cn.getFirst().getValue());
+            return cn.getFirst().getValue().toString();
         } catch (CertificateException e) {
             String message = "Error extracting CN from certificate: " + certificate.getSubjectDN().getName();
             LOGGER.error(message, e);
