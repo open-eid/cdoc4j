@@ -1,29 +1,30 @@
 package org.openeid.cdoc4j;
 
+import com.ctc.wstx.stax.WstxInputFactory;
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.openeid.cdoc4j.crypto.CryptUtil;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.DecryptionException;
 import org.openeid.cdoc4j.exception.RecipientCertificateException;
 import org.openeid.cdoc4j.exception.RecipientMissingException;
 import org.openeid.cdoc4j.token.Token;
-import org.openeid.cdoc4j.xml.DDOCParser;
-import org.openeid.cdoc4j.xml.XMLDocumentBuilder;
 import org.openeid.cdoc4j.xml.XmlEncParser;
 import org.openeid.cdoc4j.xml.XmlEncParserFactory;
+import org.openeid.cdoc4j.xml.XmlEncParserUtil;
+import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.Security;
@@ -32,8 +33,6 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,18 +44,20 @@ import java.util.List;
  * <p><code>
  *   PKCS11TokenParams params = new PKCS11TokenParams("/path/to/pkcs11/driver", "your PIN1", 0);
  *   PKCS11Token token = new PKCS11Token(params) <br/>
- *   List<DataFile> dataFiles = new CDOCDecrypter() <br/>
+ *   List<File> dataFiles = new CDOCDecrypter() <br/>
  *   &nbsp;&nbsp;.withToken(token) <br/>
- *   &nbsp;&nbsp;.decrypt(new FileInputStream(cdoc)); <br/>
+ *   &nbsp;&nbsp;.withCDOC(new File("/path/to/cdoc")) <br/>
+ *   &nbsp;&nbsp;.decrypt(new File("path/to/target/directory")); <br/>
  * </code></p>
  * <p>
  *   <b>Example of decrypting CDOC document with PKCS#12:</b>
  * </p>
  * <p><code>
  *   PKCS12Token token = new PKCS12Token("/path/to/pkcs12/file", "some password") <br/>
- *   List<DataFile> dataFiles = new CDOCDecrypter() <br/>
+ *   List<File> dataFiles = new CDOCDecrypter() <br/>
  *   &nbsp;&nbsp;.withToken(token) <br/>
- *   &nbsp;&nbsp;.decrypt(new FileInputStream(cdoc)); <br/>
+ *   &nbsp;&nbsp;.withCDOC(new File("/path/to/cdoc")) <br/>
+ *   &nbsp;&nbsp;.decrypt(new File("path/to/target/directory")); <br/>
  * </code></p>
  */
 public class CDOCDecrypter {
@@ -68,6 +69,8 @@ public class CDOCDecrypter {
     private static final Logger LOGGER = LoggerFactory.getLogger(CDOCDecrypter.class);
 
     private Token token;
+    private InputStream cdocInputStream;
+    private File destinationDirectory;
 
     /**
      * Sets the decryption token
@@ -81,67 +84,107 @@ public class CDOCDecrypter {
     }
 
     /**
-     * decrypts the CDOC payload and returns the decrypted file(s)
+     * Sets the to be decrypted CDOC
      *
-     * @param inputStream of the CDOC document
-     * @throws CDOCException when there's an error decrypting datafile(s) from the given CDOC document
-     * @return decrypted datafile(s)
+     * @param inputStream of CDOC
+     * @return the current instance
      */
-    public List<DataFile> decrypt(InputStream inputStream) throws CDOCException {
+    public CDOCDecrypter withCDOC(InputStream inputStream) {
+        this.cdocInputStream = inputStream;
+        return this;
+    }
+
+    /**
+     * Sets the to be decrypted CDOC
+     *
+     * @param file
+     * @return the current instance
+     */
+    public CDOCDecrypter withCDOC(File file) throws FileNotFoundException {
+        this.cdocInputStream = new FileInputStream(file);
+        return this;
+    }
+
+    /**
+     * decrypts the CDOC into given directory and returns a list of decrypted file(s)
+     *
+     * @throws CDOCException when there's an error decrypting datafile(s) from the given CDOC document
+     * @param destinationDirectory where decrypted file(s) will be placed
+     * @return list of decrypted file(s)
+     */
+    public List<File> decrypt(File destinationDirectory) throws CDOCException {
+        try {
+            destinationDirectory.mkdirs();
+            if (!destinationDirectory.isDirectory()) {
+                throw new DecryptionException("File path must be an directory!");
+            }
+            this.destinationDirectory = destinationDirectory;
+            return decrypt();
+        } finally {
+            IOUtils.closeQuietly(cdocInputStream);
+        }
+    }
+
+    /**
+     * decrypts the CDOC payload and returns a list of decrypted file(s)
+     *
+     * @throws CDOCException when there's an error decrypting file(s) from the given CDOC document
+     * @return list of decrypted file(s)
+     */
+    private List<File> decrypt() throws CDOCException {
         LOGGER.info("Start decrypting payload from CDOC");
+        validateParameters();
+
+        XMLInputFactory xmlInputFactory = WstxInputFactory.newInstance();
+        xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false); // This disables DTDs entirely for that factory
+        xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false); // disable external entities
+
+        XMLStreamReader xmlReader = null;
+        try {
+            xmlReader = xmlInputFactory.createXMLStreamReader(cdocInputStream);
+            XmlEncParserUtil.goToElement(xmlReader, "EncryptedData");
+            String mimeType = XmlEncParserUtil.getAttributeValue(xmlReader, "MimeType");
+            XmlEncParserUtil.goToElement(xmlReader, "EncryptionMethod");
+            String encryptionMethodUri = XmlEncParserUtil.getAttributeValue(xmlReader, "Algorithm");
+            EncryptionMethod encryptionMethod = EncryptionMethod.fromURI(encryptionMethodUri);
+            XmlEncParser xmlParser = XmlEncParserFactory.getXmlEncParser(encryptionMethod, xmlReader);
+            Recipient recipient = chooseRecipient(xmlParser.getRecipients());
+            SecretKey key = decryptKey(recipient, token);
+
+            List<File> dataFiles;
+            if (encryptedPayloadIsDDOC(mimeType)) {
+                dataFiles = xmlParser.parseAndDecryptDDOCPayload(encryptionMethod, key, destinationDirectory);
+            } else {
+                File dataFile = parseAndDecryptPayloadToFile(xmlParser, encryptionMethod, key);
+                dataFiles = Collections.singletonList(dataFile);
+            }
+            LOGGER.info("Payload decryption completed successfully!");
+            return dataFiles;
+        } catch (XMLStreamException e) {
+            throw new XmlParseException("Failed to parse XML", e);
+        } finally {
+            if (xmlReader != null) {
+                try {
+                    xmlReader.close();
+                } catch (XMLStreamException e) {
+                    throw new IllegalStateException("Failed to close XMLStreamReader", e);
+                }
+            }
+            IOUtils.closeQuietly(cdocInputStream);
+        }
+    }
+
+    private void validateParameters() throws DecryptionException {
         if (token == null) {
             throw new DecryptionException("Token used for decryption not set!");
         }
 
-        Document document = XMLDocumentBuilder.buildDocument(inputStream);
-        XmlEncParser cdocparser = XmlEncParserFactory.getXmlEncParser(document);
-
-        Recipient recipient = chooseRecipient(cdocparser.getRecipients());
-
-        byte[] encryptedPayload = cdocparser.getEncryptedPayload();
-        EncryptionMethod encryptionMethod = cdocparser.getEncryptionMethod();
-
-        SecretKey key = decryptKey(recipient, token);
-        byte[] decryptedPayload = decryptPayload(encryptionMethod, encryptedPayload, key);
-
-        List<DataFile> dataFiles;
-        if (cdocparser.encryptedPayloadIsDDOC()) {
-            LOGGER.debug("Encrypted payload is DDOC, decrypting..");
-            DDOCParser ddocParser = new DDOCParser(decryptedPayload);
-            dataFiles = ddocParser.getDataFiles();
-        } else {
-            LOGGER.debug("Encrypted payload is a single file, decrypting..");
-            String fileName = cdocparser.getOriginalFileName();
-            DataFile dataFile = new DataFile(fileName, decryptedPayload);
-            dataFiles = new ArrayList<>(Collections.singletonList(dataFile));
-        }
-        LOGGER.info("Payload decryption completed successfully!");
-        return dataFiles;
-    }
-
-    private Recipient chooseRecipient(List<Recipient> recipients) throws CDOCException {
-        if (recipients.size() > 1) {
-            Certificate certificate = token.getCertificate();
-            if (certificate == null) {
-                String message = "Recipient not set! CDOC contains more than 1 recipients, recipient certificate needs to be set in order to choose the right recipient";
-                LOGGER.error(message);
-                throw new RecipientMissingException(message);
-            } else {
-                for (Recipient recipient : recipients) {
-                    if (certificate.equals(recipient.getCertificate())) {
-                        return recipient;
-                    }
-                }
-                String message = "Configured recipient certificate does not match with any of the recipients in CDOC!";
-                LOGGER.error(message);
-                throw new RecipientCertificateException(message);
-            }
-        } else {
-            return recipients.get(0);
+        if (cdocInputStream == null) {
+            throw new DecryptionException("CDOC to decrypt is not set!");
         }
     }
 
-    private SecretKey decryptKey(Recipient recipient, Token token) throws CDOCException {
+    protected SecretKey decryptKey(Recipient recipient, Token token) throws CDOCException {
         if (recipient instanceof RSARecipient) {
             return decryptRsaKey((RSARecipient) recipient,token);
         } else if (recipient instanceof ECRecipient) {
@@ -173,7 +216,7 @@ public class CDOCDecrypter {
             concatenationKDFGenerator.generateBytes(wrapperKeyBytes, 0, 32);
             SecretKeySpec wrapperKey = new SecretKeySpec(wrapperKeyBytes, "AES");
 
-            Cipher cipher = Cipher.getInstance("AESWrap");
+            Cipher cipher = Cipher.getInstance("AESWrap", "BC");
             cipher.init(Cipher.UNWRAP_MODE, wrapperKey);
             return (SecretKey) cipher.unwrap(recipient.getEncryptedKey(), "AES", Cipher.SECRET_KEY);
         } catch (GeneralSecurityException | IOException e) {
@@ -213,30 +256,65 @@ public class CDOCDecrypter {
         return true;
     }
 
-    private byte[] concatenate(byte[]... bytes) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-        for (int i = 0; i < bytes.length; i++) {
-            outputStream.write(bytes[i]);
-        }
-        return outputStream.toByteArray();
-    }
-
-    private byte[] decryptPayload(EncryptionMethod encryptionMethod, byte[] encryptedBytes, SecretKey key) throws DecryptionException {
-        try {
-            if (EncryptionMethod.AES_128_CBC == encryptionMethod) {
-                byte[] iv = Arrays.copyOfRange(encryptedBytes, 0, 16);
-                byte[] bytesToDecrypt = Arrays.copyOfRange(encryptedBytes, 16, encryptedBytes.length);
-                return CryptUtil.decryptAesCbc(bytesToDecrypt, key, iv);
+    private Recipient chooseRecipient(List<Recipient> recipients) throws CDOCException {
+        if (recipients.size() > 1) {
+            Certificate certificate = token.getCertificate();
+            if (certificate == null) {
+                String message = "Recipient not set! CDOC contains more than 1 recipients, recipient certificate needs to be set in order to choose the right recipient";
+                LOGGER.error(message);
+                throw new RecipientMissingException(message);
             } else {
-                byte[] iv = Arrays.copyOfRange(encryptedBytes, 0, 12);
-                byte[] bytesToDecrypt = Arrays.copyOfRange(encryptedBytes, 12, encryptedBytes.length);
-                return CryptUtil.decryptAesGcm(bytesToDecrypt, key, iv);
+                for (Recipient recipient : recipients) {
+                    if (certificate.equals(recipient.getCertificate())) {
+                        return recipient;
+                    }
+                }
+                String message = "Configured recipient certificate does not match with any of the recipients in CDOC!";
+                LOGGER.error(message);
+                throw new RecipientCertificateException(message);
             }
-        } catch (GeneralSecurityException | IOException e) {
-            String message = "Error decrypting payload!";
-            LOGGER.error(message, e);
-            throw new DecryptionException(message, e);
+        } else {
+            return recipients.get(0);
         }
     }
 
+    private boolean encryptedPayloadIsDDOC(String mimeType) {
+        return mimeType.equals("http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd");
+    }
+
+    private DataFile parseAndDecryptPayloadToByteArrayStream(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
+        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            xmlParser.parseAndDecryptEncryptedDataPayload(output, encryptionMethod, key);
+            String originalFileName = xmlParser.getOriginalFileName();
+
+            // TODO: Could be improved by using piped streams.
+            ByteArrayInputStream endInput = new ByteArrayInputStream(output.toByteArray());
+            return new DataFile(originalFileName, endInput, output.size());
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to close ByteArrayOutputStream", e);
+        }
+    }
+
+    private File parseAndDecryptPayloadToFile(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
+        File file = new File(destinationDirectory.getPath(), "TEMP_FILE_NAME.txt");
+        try (FileOutputStream output = new FileOutputStream(file)) {
+            xmlParser.parseAndDecryptEncryptedDataPayload(output, encryptionMethod, key);
+            String originalFileName = xmlParser.getOriginalFileName();
+            output.close();
+            File originalFile = new File(destinationDirectory.getPath(), originalFileName);
+            file.renameTo(originalFile);
+            return originalFile;
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to construct file output stream", e);
+        }
+    }
+
+    private byte[] concatenate(byte[]... byteArrays) throws IOException {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            for (byte[] byteArray : byteArrays) {
+                outputStream.write(byteArray);
+            }
+            return outputStream.toByteArray();
+        }
+    }
 }

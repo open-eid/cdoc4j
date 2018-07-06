@@ -1,19 +1,16 @@
 package org.openeid.cdoc4j.xml;
 
-import org.bouncycastle.util.encoders.Base64;
-import org.openeid.cdoc4j.DataFile;
+import com.ctc.wstx.stax.WstxInputFactory;
+import org.openeid.cdoc4j.stream.CustomOutputStreamWriter;
+import org.openeid.cdoc4j.stream.base64.Base64OutputStream;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
-import java.io.ByteArrayInputStream;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,30 +18,55 @@ public class DDOCParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DDOCParser.class);
 
-    private Document document;
+    private final XMLStreamReader xmlReader;
+    private final File fileDestinationDirectory;
 
-    public DDOCParser(byte[] ddocBytes) throws XmlParseException {
-        document = XMLDocumentBuilder.buildDocument(new ByteArrayInputStream(ddocBytes));
+    public DDOCParser(InputStream inputStream, File fileDestinationDirectory) throws XMLStreamException {
+        XMLInputFactory xmlInputFactory = WstxInputFactory.newInstance();
+        xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false); // This disables DTDs entirely for that factory
+        xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false); // disable external entities
+
+        xmlReader = xmlInputFactory.createXMLStreamReader(inputStream);
+        this.fileDestinationDirectory = fileDestinationDirectory;
     }
 
-    public List<DataFile> getDataFiles() throws XmlParseException {
+    public List<File> parseDataFiles() throws XmlParseException, XMLStreamException {
+
+        XmlEncParserUtil.goToElement(xmlReader, "SignedDoc");
+
+        List<File> dataFiles = new ArrayList<>();
+        while (XmlEncParserUtil.nextElementIs(xmlReader, "DataFile")) {
+            dataFiles.add(parseDataFile());
+        }
+
+        return dataFiles;
+    }
+
+    private File parseDataFile() throws XmlParseException, XMLStreamException {
+        String fileName = XmlEncParserUtil.getAttributeValue(xmlReader, "Filename");
         try {
-            List <DataFile> dataFiles = new ArrayList<>();
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            XPathExpression expression = xpath.compile("/SignedDoc/DataFile");
-            NodeList dataFileNodes = (NodeList) expression.evaluate(document, XPathConstants.NODESET);
-            for (int i = 0; i < dataFileNodes.getLength(); i++) {
-                Node dataFileNode = dataFileNodes.item(i);
-                String dataFileName = dataFileNode.getAttributes().getNamedItem("Filename").getTextContent();
-                byte[] dataFileContent = Base64.decode(dataFileNode.getTextContent());
-                dataFiles.add(new DataFile(dataFileName, dataFileContent));
-            }
-            return dataFiles;
-        } catch (Exception e) {
-            String message = "Error parsing datafiles from DDOC!";
-            LOGGER.error(message, e);
-            throw new XmlParseException(message, e);
+            return parseDataFileAndSaveToFile(fileName);
+        } catch (IOException e) {
+            String errorMessage = "Failed to parse DDOC data file named " + fileName;
+            LOGGER.error(errorMessage, e);
+            throw new XmlParseException(errorMessage, e);
         }
     }
 
+    private File parseDataFileAndSaveToFile(String fileName) throws XMLStreamException, IOException {
+        String filePath = fileDestinationDirectory.getPath() + "/" + fileName;
+        try (FileOutputStream fileDestination = new FileOutputStream(filePath);
+             Base64OutputStream base64DecodeStream = new Base64OutputStream(fileDestination, false);
+             CustomOutputStreamWriter outputWriter = new CustomOutputStreamWriter(base64DecodeStream)) {
+
+            XmlEncParserUtil.readCharacters(xmlReader, outputWriter, 1024);
+            outputWriter.flush();
+            fileDestination.close();
+            return new File(filePath);
+        }
+    }
+
+    public void close() throws XMLStreamException {
+        xmlReader.close();
+    }
 } 

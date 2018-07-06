@@ -1,17 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE lolz [
-                                       <!ENTITY lol "lol">
-                                       <!ELEMENT lolz (#PCDATA)>
-                                       <!ENTITY lol1 "&lol;&lol;&lol;">
-                                       <!ENTITY lol2 "&lol1;&lol1;&lol1;">
-                                       <!ENTITY lol3 "&lol2;&lol2;&lol2;">
-                                       <!ENTITY lol4 "&lol3;&lol3;&lol3;">
-                                       <!ENTITY lol5 "&lol4;&lol4;&lol4;">
-                                       <!ENTITY lol6 "&lol5;&lol5;&lol5;">
-                                       <!ENTITY lol7 "&lol6;&lol6;&lol6;">
-                                       <!ENTITY lol8 "&lol7;&lol7;&lol7;">
-                                       <!ENTITY lol9 "&lol8;&lol8;&lol8;">
-                                      ]><denc:EncryptedData xmlns:denc="http://www.w3.org/2001/04/xmlenc#" MimeType="application/octet-stream">
-  <denc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
+<?xml version="1.0" encoding="UTF-8"?><denc:EncryptedData xmlns:denc="http://www.w3.org/2001/04/xmlenc#" MimeType="http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd">
+  <denc:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes256-gcm"/>
   <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
     <denc:EncryptedKey Recipient="ŽÕRINÜWŠKY\,MÄRÜ-LÖÖZ\,11404176865">
       <denc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-1_5"/>
@@ -21,17 +9,18 @@
         </ds:X509Data>
       </ds:KeyInfo>
       <denc:CipherData>
-        <denc:CipherValue>kjO+zwh9W/+lQrDjG/KZv5pBvpzTx6tpkAzIDlS9/U1l+m2j6Jz2QlsPasEpfr31rwVaQyqc9TwlzY0HQ4iFSz/i6axOqbvyJOyI3jAokzaOY/pKWjW7qvuhZfwuwEP4E5PGq8j0clS1cxLMkute9tgiz4W5i7kBtwD78c+AvH1M6QQFibtGm5ipiqMdN3eKm2TiSWtTcNZKpRTRptkuf7l0EqM/et2JgGsMtf196Da49ST6W3Pd0CyutkAZGSRM2bP3U7AZDbUD13cmmyEnHqzTwUztK6ozIwmFK7+tBUrRoDI3z3ZV1kmAFIoXZ2trZHgQ/dkRbf5aGZcOPvIDkw==</denc:CipherValue>
+        <denc:CipherValue>lJLnCPn2AjfD9G66vsiOl8+anufNqq8YDKknaOwysWlC/PJ2ccdLqecPcVaHm82+xbvDellm78BXsvUUut+1vq0MGmprHofF4hknR+6IyesclmSqAqM61j5pHw6MrAEWK89I1k4Bg5lxylqAOozv5T5LSfZjBm9vc3fjHuLPknXDwtsl203kQ7lCz/cBVp3g2G4nkLzA8JITxp6k/xFL25OSPQxePzJVdtbHRqzs+Xbamnr24u7HqaIQllWBY5xyqgptmiwlhM0iUntCB2elrFs/Y19vqLeIXa6s99BoEe33OFELR+MvmITtr5o9fVMovxyV5BD8BGnno/Gr1qjNgg==</denc:CipherValue>
       </denc:CipherData>
     </denc:EncryptedKey>
   </ds:KeyInfo>
   <denc:CipherData>
-    <denc:CipherValue>xNF/mWkCGT98P2EGHHxxb7Dk/f5asGsUglUKZGaBD0ZY7BbMKmmZmAOHM7jVV53F</denc:CipherValue>
+    <denc:CipherValue>KARhkAyuzqGRSxBc2OnBzo4DO2MvKnbh/XUSBc4NLrvzrSHdqtbR2DfX82ZJjvFV16ZFHyexqXu9hz4kh9hR04yBHP5Gw8vpBLzVBruQRuHCwpcbacWgDeI5KVaE7+Kn7tr7788OBmYlBgIOsbOSHAhl5sGMWI/myyrrrPtGE9lDMOY6udno5zS2hr4ndBPtyALBvdJl9E17AoDCKwb9iRQsevhUUzEEzMgmKHpoWLOSJnvnVbRuFG8Nd4dXjDtMloIgedzGDgVU1CY+D9VM1NTyO6LrASS65fFrhOyoHxz1YIIYcfT9i6IT3VVOV/UpBQ5ks4XsiQj5v82P5FFxT2WJLZb9IFJElSKy2iGOG/2goRbFQ5ht2I0v4WGA7FEMRKHaqggAQ/yHIO3RArCHYpheCHHevqNMq0Vud8WNww2NqR7gu36awAP5HsXPiv5KtH/MkFgEMoAd76u0aIN9gC4zRHnohMagNrOH9PlBjE26Stu35oNMnPRUcUHtSxCzAyb8o3JrUsHMTPfCCgLFH7DMnNY8lfHN1LGUab+onXFjTthbR5Dp0PJk0REDR/wSJpL0EqwtpbQeco8JEz6R5ukemKXlUNJEQgXFqA85zchSWStw1e4Hwf0y3+hTmzGRnMY5</denc:CipherValue>
   </denc:CipherData>
   <denc:EncryptionProperties>
-    <denc:EncryptionProperty Name="Filename">&lol9;</denc:EncryptionProperty>
-    <denc:EncryptionProperty Name="DocumentFormat">ENCDOC-XZZML|1.0</denc:EncryptionProperty>
+    <denc:EncryptionProperty Name="Filename">lorem1.ddoc</denc:EncryptionProperty>
+    <denc:EncryptionProperty Name="DocumentFormat">ENCDOC-XML|1.1</denc:EncryptionProperty>
     <denc:EncryptionProperty Name="LibraryVersion">cdoc4j|1.0</denc:EncryptionProperty>
-    <denc:EncryptionProperty Name="orig_file">test.txt|11|application/octet-stream|D0</denc:EncryptionProperty>
+    <denc:EncryptionProperty Name="orig_file">lorem1.txt|11|application/octet-stream|D0</denc:EncryptionProperty>
+    <denc:EncryptionProperty Name="orig_file">lorem2.txt|26|application/octet-stream|D1</denc:EncryptionProperty>
   </denc:EncryptionProperties>
 </denc:EncryptedData>

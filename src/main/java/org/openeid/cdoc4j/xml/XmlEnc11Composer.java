@@ -1,5 +1,6 @@
 package org.openeid.cdoc4j.xml;
 
+import javanet.staxutils.IndentingXMLStreamWriter;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
@@ -13,24 +14,27 @@ import org.openeid.cdoc4j.crypto.KeyGenUtil;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.EncryptionException;
 import org.openeid.cdoc4j.exception.RecipientCertificateException;
+import org.openeid.cdoc4j.stream.ClosableBase64OutputStream;
+import org.openeid.cdoc4j.xml.exception.XmlTransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.List;
 
 public class XmlEnc11Composer extends XmlEncComposer {
 
@@ -38,12 +42,16 @@ public class XmlEnc11Composer extends XmlEncComposer {
 
     protected static final String ENCDOC_XML_VERSION = "ENCDOC-XML|1.1";
 
+    private KeyPair ephemeralKeyPair;
+    private byte[] partyUInfo;
+    private byte[] partyVInfo;
+
     @Override
-    protected Element createRecipientEncryptedKey(SecretKey key, X509Certificate certificate) throws CDOCException {
+    protected void createRecipientEncryptedKeyElement(X509Certificate certificate) throws CDOCException, XMLStreamException {
         if (certificate.getPublicKey() instanceof RSAPublicKey) {
-            return super.createRecipientEncryptedKey(key, certificate);
+            super.createRecipientEncryptedKeyElement(certificate);
         } else if (certificate.getPublicKey() instanceof ECPublicKey) {
-            return createECRecipientEncryptedKey(key, certificate);
+            createECRecipientEncryptedKey(certificate);
         } else {
             String message = "Recipient's: " + certificate.getSubjectDN().getName() + " certificate contains unknown key algorithm: " + certificate.getPublicKey().getAlgorithm();
             LOGGER.error(message);
@@ -51,20 +59,26 @@ public class XmlEnc11Composer extends XmlEncComposer {
         }
     }
 
-    protected Element createECRecipientEncryptedKey(SecretKey key, X509Certificate certificate) throws CDOCException {
-        Element encryptedKey = document.createElement("denc:EncryptedKey");
-        encryptedKey.setAttribute("Recipient", CertUtil.getCN(certificate));
+    private void createECRecipientEncryptedKey(X509Certificate certificate) throws CDOCException, XMLStreamException {
+        writer.writeStartElement(xmlEncPrefix("EncryptedKey"));
+        writer.writeAttribute("Recipient", CertUtil.getCN(certificate));
+        createEncryptionMethodElement("http://www.w3.org/2001/04/xmlenc#kw-aes256");
+        createECKeyInfoElement(certificate);
+        createRecipientCipherDataElement(certificate);
+        writer.writeEndElement();
+    }
 
-        Element encryptionMethod = createEncryptionMethod("http://www.w3.org/2001/04/xmlenc#kw-aes256");
-        encryptedKey.appendChild(encryptionMethod);
+    protected void createECKeyInfoElement(X509Certificate certificate) throws CDOCException, XMLStreamException {
+        writer.writeStartElement(xmlSigPrefix("KeyInfo"));
+        createAgreementMethodElement(certificate);
+        writer.writeEndElement();
+    }
 
-        Element keyInfo = document.createElement("ds:KeyInfo");
-
-        Element agreementMethod = document.createElement("denc:AgreementMethod");
-        agreementMethod.setAttribute("Algorithm", "http://www.w3.org/2009/xmlenc11#ECDH-ES");
+    private void createAgreementMethodElement(X509Certificate certificate) throws XMLStreamException, CDOCException {
+        writer.writeStartElement(xmlEncPrefix("AgreementMethod"));
+        writer.writeAttribute("Algorithm", "http://www.w3.org/2009/xmlenc11#ECDH-ES");
 
         ECPublicKey ecPublicKey = (ECPublicKey) certificate.getPublicKey();
-        KeyPair ephemeralKeyPair;
         try {
             ephemeralKeyPair = KeyGenUtil.generateECKeyPair(ecPublicKey);
         } catch (GeneralSecurityException e) {
@@ -73,8 +87,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
             throw new CDOCException(message, e);
         }
 
-        byte[] partyUInfo = SubjectPublicKeyInfo.getInstance(ephemeralKeyPair.getPublic().getEncoded()).getPublicKeyData().getBytes();
-        byte[] partyVInfo;
+        partyUInfo = SubjectPublicKeyInfo.getInstance(ephemeralKeyPair.getPublic().getEncoded()).getPublicKeyData().getBytes();
         try {
             partyVInfo = certificate.getEncoded();
         } catch (CertificateEncodingException e) {
@@ -84,76 +97,83 @@ public class XmlEnc11Composer extends XmlEncComposer {
         }
         String curveOID = SubjectPublicKeyInfo.getInstance(ecPublicKey.getEncoded()).getAlgorithm().getParameters().toString();
 
-        agreementMethod.appendChild(createKeyDerivationMethod(partyUInfo, partyVInfo));
-        agreementMethod.appendChild(createOriginatorKeyInfo(partyUInfo, curveOID));
-        agreementMethod.appendChild(createRecipientKeyInfo(certificate));
+        createKeyDerivationMethod();
+        createOriginatorKeyInfo(curveOID);
+        createRecipientKeyInfo(certificate);
 
-        keyInfo.appendChild(agreementMethod);
-        encryptedKey.appendChild(keyInfo);
-        encryptedKey.appendChild(createRecipientCipherData(key, ephemeralKeyPair, certificate, partyUInfo, partyVInfo));
-        return encryptedKey;
+        writer.writeEndElement();
     }
 
-    private Element createKeyDerivationMethod(byte[] partyUInfo, byte[] partyVInfo) throws RecipientCertificateException {
-        Element keyDerivationMethod = document.createElement("xenc11:KeyDerivationMethod");
-        keyDerivationMethod.setAttribute("xmlns:xenc11", "http://www.w3.org/2009/xmlenc11#");
-        keyDerivationMethod.setAttribute("Algorithm", "http://www.w3.org/2009/xmlenc11#ConcatKDF");
-
-        Element concatKDFParams = document.createElement("xenc11:ConcatKDFParams");
-        concatKDFParams.setAttribute("AlgorithmID", "00" + Hex.toHexString(ENCDOC_XML_VERSION.getBytes()));
-        concatKDFParams.setAttribute("PartyUInfo", "00" + Hex.toHexString(partyUInfo));
-        concatKDFParams.setAttribute("PartyVInfo", "00" + Hex.toHexString(partyVInfo));
-
-        Element digestMethod = document.createElement("ds:DigestMethod");
-        digestMethod.setAttribute("Algorithm", "http://www.w3.org/2001/04/xmlenc#sha384");
-        concatKDFParams.appendChild(digestMethod);
-
-        keyDerivationMethod.appendChild(concatKDFParams);
-
-        return keyDerivationMethod;
+    private void createKeyDerivationMethod() throws XMLStreamException {
+        writer.writeStartElement("xenc11:KeyDerivationMethod");
+        writer.writeAttribute("xmlns:xenc11", "http://www.w3.org/2009/xmlenc11#");
+        writer.writeAttribute("Algorithm", "http://www.w3.org/2009/xmlenc11#ConcatKDF");
+        createConcatKDFParamsElement();
+        writer.writeEndElement();
     }
 
-    private Element createOriginatorKeyInfo(byte[] partyUInfo, String curveOID) {
-        Element originatorKeyInfo = document.createElement("denc:OriginatorKeyInfo");
-        Element keyValue = document.createElement("ds:KeyValue");
-        Element eckeyValue = document.createElement("dsig11:ECKeyValue");
-        eckeyValue.setAttribute("xmlns:dsig11", "http://www.w3.org/2009/xmldsig11#");
+    private void createConcatKDFParamsElement() throws XMLStreamException {
+        writer.writeStartElement("xenc11:ConcatKDFParams");
+        writer.writeAttribute("AlgorithmID", "00" + Hex.toHexString(ENCDOC_XML_VERSION.getBytes()));
+        writer.writeAttribute("PartyUInfo", "00" + Hex.toHexString(partyUInfo));
+        writer.writeAttribute("PartyVInfo", "00" + Hex.toHexString(partyVInfo));
+        createDigestMethodElement();
+        writer.writeEndElement();
+    }
 
-        Element namedCurve = document.createElement("dsig11:NamedCurve");
+    private void createDigestMethodElement() throws XMLStreamException {
+        writer.writeStartElement(xmlSigPrefix("DigestMethod"));
+        writer.writeAttribute("Algorithm", "http://www.w3.org/2001/04/xmlenc#sha384");
+        writer.writeEndElement();
+    }
+
+    private void createOriginatorKeyInfo(String curveOID) throws XMLStreamException {
+        writer.writeStartElement(xmlEncPrefix("OriginatorKeyInfo"));
+        createKeyValueElement(curveOID);
+        writer.writeEndElement();
+    }
+
+    private void createKeyValueElement(String curveOID) throws XMLStreamException {
+        writer.writeStartElement(xmlSigPrefix("KeyValue"));
+        createECKeyValueElement(curveOID);
+        writer.writeEndElement();
+    }
+
+    private void createECKeyValueElement(String curveOID) throws XMLStreamException {
+        writer.writeStartElement("dsig11:ECKeyValue");
+        writer.writeAttribute("xmlns:dsig11", "http://www.w3.org/2009/xmldsig11#");
+        createNamedCurveElement(curveOID);
+        createPublicKeyElement();
+        writer.writeEndElement();
+    }
+
+    private void createNamedCurveElement(String curveOID) throws XMLStreamException {
+        writer.writeStartElement("dsig11:NamedCurve");
         String curveName = "urn:oid:" + curveOID;
-        namedCurve.setAttribute("URI", curveName);
-        eckeyValue.appendChild(namedCurve);
-
-        Element publicKey = document.createElement("dsig11:PublicKey");
-        publicKey.setTextContent(Base64.toBase64String(partyUInfo));
-        eckeyValue.appendChild(publicKey);
-
-        keyValue.appendChild(eckeyValue);
-        originatorKeyInfo.appendChild(keyValue);
-        return originatorKeyInfo;
+        writer.writeAttribute("URI", curveName);
+        writer.writeEndElement();
     }
 
-    private Node createRecipientKeyInfo(X509Certificate certificate) throws RecipientCertificateException {
-        Element recipientKeyInfo = document.createElement("denc:RecipientKeyInfo");
-        Element x509data = document.createElement("ds:X509Data");
-
-        Element x509Certificate = document.createElement("ds:X509Certificate");
-        try {
-            x509Certificate.setTextContent(Base64.toBase64String(certificate.getEncoded()));
-        } catch (CertificateEncodingException e) {
-            String message = "Error encoding certificate: " + certificate.getSubjectDN().getName();
-            LOGGER.error(message, e);
-            throw new RecipientCertificateException(message, e);
-        }
-
-        x509data.appendChild(x509Certificate);
-        recipientKeyInfo.appendChild(x509data);
-        return recipientKeyInfo;
+    private void createPublicKeyElement() throws XMLStreamException {
+        writer.writeStartElement("dsig11:PublicKey");
+        writer.writeCharacters(Base64.toBase64String(partyUInfo));
+        writer.writeEndElement();
     }
 
-    private Node createRecipientCipherData(SecretKey key, KeyPair ephemeralKeyPair, X509Certificate certificate, byte[] partyUInfo, byte[] partyVInfo) throws CDOCException {
-        Element cipherData = document.createElement("denc:CipherData");
-        Element cipherValue = document.createElement("denc:CipherValue");
+    private void createRecipientKeyInfo(X509Certificate certificate) throws RecipientCertificateException, XMLStreamException {
+        writer.writeStartElement(xmlEncPrefix("RecipientKeyInfo"));
+        super.createX509DataElement(certificate);
+        writer.writeEndElement();
+    }
+
+    private void createRecipientCipherDataElement(X509Certificate certificate) throws CDOCException, XMLStreamException {
+        writer.writeStartElement(xmlEncPrefix("CipherData"));
+        createRecipientCipherValueElement(certificate);
+        writer.writeEndElement();
+    }
+
+    private void createRecipientCipherValueElement(X509Certificate certificate) throws CDOCException, XMLStreamException {
+        writer.writeStartElement(xmlEncPrefix("CipherValue"));
 
         byte[] sharedSecret;
         try {
@@ -174,56 +194,81 @@ public class XmlEnc11Composer extends XmlEncComposer {
             concatenationKDFGenerator.generateBytes(wrapKeyBytes, 0, 32);
 
             SecretKeySpec wrapKey = new SecretKeySpec(wrapKeyBytes, "AES");
-            Cipher c = Cipher.getInstance("AESWrap");
-            c.init(Cipher.WRAP_MODE, wrapKey);
-            byte[] wrappedKey = c.wrap(key);
-            cipherValue.setTextContent(Base64.toBase64String(wrappedKey));
+            Cipher cipher = Cipher.getInstance("AESWrap", "BC");
+            cipher.init(Cipher.WRAP_MODE, wrapKey);
+            byte[] wrappedKey = cipher.wrap(secretKey);
+            writer.writeCharacters(Base64.toBase64String(wrappedKey));
         } catch (GeneralSecurityException | IOException e) {
             String message = "Error generating ECDH key agreement!";
             LOGGER.error(message, e);
             throw new CDOCException(message, e);
         }
-        
-        cipherData.appendChild(cipherValue);
 
-        return cipherData;
-    }
-
-    @Override
-    protected Element createCipherData(SecretKey key, List<DataFile> dataFiles) throws CDOCException {
-        Element cipherData = document.createElement("denc:CipherData");
-        Element cipherValue = document.createElement("denc:CipherValue");
-
-        byte[] dataToEncrypt;
-        if (dataFiles.size() > 1) {
-            LOGGER.debug("Multiple data files set - composing data files DDOC..");
-            dataToEncrypt = constructDataFilesXml(dataFiles);
-        } else {
-            dataToEncrypt = dataFiles.get(0).getContent();
-        }
-        try {
-            byte[] iv = CryptUtil.generateIV(12);
-            byte[] encryptedDataFiles = CryptUtil.encryptAesGcm(dataToEncrypt, key, iv);
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            byteArrayOutputStream.write(iv);
-            byteArrayOutputStream.write(encryptedDataFiles);
-
-            cipherValue.setTextContent(Base64.toBase64String(byteArrayOutputStream.toByteArray()));
-        } catch (GeneralSecurityException | IOException e) {
-            String message = "Error encrypting data files!";
-            LOGGER.error(message, e);
-            throw new EncryptionException(message, e);
-        }
-        cipherData.appendChild(cipherValue);
-        return cipherData;
+        writer.writeEndElement();
     }
 
     private byte[] concatenate(byte[]... bytes) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-        for (int i = 0; i < bytes.length; i++) {
-            outputStream.write(bytes[i]);
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            for (int i = 0; i < bytes.length; i++) {
+                outputStream.write(bytes[i]);
+            }
+            return outputStream.toByteArray();
         }
-        return outputStream.toByteArray();
+    }
+
+    @Override
+    protected void encryptAndBase64EncodeSingleDataFile() throws EncryptionException {
+        byte[] IV = CryptUtil.generateIV(12);
+
+        try (ClosableBase64OutputStream outputStream = new ClosableBase64OutputStream(output)) {
+            outputStream.write(IV);
+            encryptDataFile(outputStream, dataFiles.get(0), IV);
+        } catch (IOException e) {
+            throw formEncryptionException("Failed to base64 encode data file content", e);
+        }
+    }
+
+    protected void encryptDataFile(OutputStream outputStream, DataFile dataFile, byte[] IV) throws EncryptionException {
+        try (InputStream dataToEncrypt = dataFile.getContent()) {
+            CryptUtil.encryptAesGcm(outputStream, dataToEncrypt, secretKey, IV);
+        } catch (IOException | GeneralSecurityException e) {
+            throw formEncryptionException("Error encrypting data file!", e);
+        }
+    }
+
+    @Override
+    protected void constructDataFilesXml() throws CDOCException, XMLStreamException {
+        byte[] IV = CryptUtil.generateIV(12);
+        Cipher cipher = constructEncryptionCipher(IV);
+
+        XMLStreamWriter ddocWriter = null;
+        try (
+            ClosableBase64OutputStream base64EncoderStream = new ClosableBase64OutputStream(output);
+            CipherOutputStream cipherOutput = new CipherOutputStream(base64EncoderStream, cipher)
+        ) {
+            base64EncoderStream.write(IV);
+            ddocWriter = new IndentingXMLStreamWriter(factory.createXMLStreamWriter(cipherOutput));
+            constructAndEncryptDDOC(ddocWriter, cipherOutput);
+        } catch (IOException | EncryptionException | XMLStreamException e) {
+            String message = "Error transforming DDOC xml!";
+            LOGGER.error(message, e);
+            throw new XmlTransformException(message, e);
+        } finally {
+            if (ddocWriter != null) {
+                ddocWriter.close();
+            }
+        }
+    }
+
+    private Cipher constructEncryptionCipher(byte[] IV) throws EncryptionException {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+            GCMParameterSpec params = new GCMParameterSpec(128, IV);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, params);
+            return cipher;
+        } catch (GeneralSecurityException e) {
+            throw new EncryptionException("Failed to construct AES GCM encryption cipher", e);
+        }
     }
 
     @Override

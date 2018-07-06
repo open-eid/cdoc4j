@@ -1,5 +1,7 @@
 package org.openeid.cdoc4j.crypto;
 
+import org.bouncycastle.crypto.params.KeyParameter;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.GeneralSecurityException;
@@ -10,7 +12,7 @@ import java.security.interfaces.ECPublicKey;
 
 public class KeyGenUtil {
 
-    public static SecretKey generateDataEncrytionKey(int lengthInBytes) {
+    public static SecretKey generateDataEncryptionKey(int lengthInBytes) {
         final byte[] keyBytes = new byte[lengthInBytes];
         new SecureRandom().nextBytes(keyBytes);
         return new SecretKeySpec(keyBytes, "AES");
@@ -22,4 +24,9 @@ public class KeyGenUtil {
         return keyPairGenerator.generateKeyPair();
     }
 
+    public static KeyParameter generateGCMDataEncryptionKey(int lengthInBytes) {
+        final byte[] keyBytes = new byte[lengthInBytes];
+        new SecureRandom().nextBytes(keyBytes);
+        return new KeyParameter(keyBytes);
+    }
 } 

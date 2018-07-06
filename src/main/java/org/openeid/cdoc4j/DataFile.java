@@ -1,21 +1,46 @@
 package org.openeid.cdoc4j;
 
+import java.io.*;
+
 public class DataFile {
 
-    private String fileName;
-    private byte[] content;
+    private String name;
+    private long size;
+    private InputStream file;
 
-    public DataFile(String fileName, byte[] content) {
-        this.fileName = fileName;
-        this.content = content;
+    public DataFile(String name, InputStream file, long size) {
+        this.name = name;
+        this.file = file;
+        this.size = size;
     }
 
-    public byte[] getContent() {
-        return content;
+    public DataFile(File file) throws FileNotFoundException {
+        this.name = file.getName();
+        this.file = new FileInputStream(file);
+        this.size = file.length();
     }
 
-    public String getFileName() {
-        return fileName;
+    public DataFile(String name, ByteArrayInputStream file) {
+        this.name = name;
+        this.file = file;
+        this.size = file.available();
     }
 
+    public DataFile(String name, byte[] content) {
+        this.name = name;
+        this.file = new ByteArrayInputStream(content);
+        this.size = content.length;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public InputStream getContent() {
+        return file;
+    }
 }
