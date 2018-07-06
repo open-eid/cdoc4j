@@ -8,7 +8,6 @@ import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -25,22 +24,22 @@ public class CryptUtil {
     }
 
     public static byte[] encryptRsa(byte[] bytesToEncrypt, X509Certificate certificate) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
         cipher.init(Cipher.ENCRYPT_MODE, certificate.getPublicKey());
         return cipher.doFinal(bytesToEncrypt);
     }
 
     public static byte[] decryptRsa(byte[] bytesToDecrypt, PrivateKey privateKey) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         return cipher.doFinal(bytesToDecrypt);
     }
 
     public static void encryptAesCbc(OutputStream output, InputStream dataToEncrypt, SecretKey key, byte[] IV, int blockSize, long fileSize) throws IOException, GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "BC");
         cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(IV));
 
-        try (OutputStream cipherOutput = new BufferedOutputStream(new CipherOutputStream(output, cipher))) {
+        try (OutputStream cipherOutput = new CipherOutputStream(output, cipher)) {
             IOUtils.copy(dataToEncrypt, cipherOutput, 1024);
             int paddedBytes = PaddingUtil.addX923Padding(cipherOutput, fileSize, blockSize);
             PaddingUtil.addPkcs7Padding(cipherOutput, fileSize + paddedBytes, blockSize);
@@ -48,7 +47,7 @@ public class CryptUtil {
     }
 
     public static void encryptAesGcm(OutputStream output, InputStream dataToEncrypt, SecretKey key, byte[] IV) throws IOException, GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding" , "BC");
         GCMParameterSpec params = new GCMParameterSpec(128, IV);
         cipher.init(Cipher.ENCRYPT_MODE, key, params);
 

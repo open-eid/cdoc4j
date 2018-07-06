@@ -1,5 +1,6 @@
 package org.openeid.cdoc4j.xml;
 
+import com.ctc.wstx.stax.WstxOutputFactory;
 import javanet.staxutils.IndentingXMLStreamWriter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -20,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.xml.stream.XMLOutputFactory;
@@ -31,9 +31,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -72,7 +69,7 @@ public class XmlEncComposer {
         this.secretKey = secretKey;
         this.recipients = recipients;
         this.output = output;
-        factory = XMLOutputFactory.newInstance();
+        factory = WstxOutputFactory.newInstance();
 
         try {
             writer = new IndentingXMLStreamWriter(factory.createXMLStreamWriter(output));
@@ -193,8 +190,14 @@ public class XmlEncComposer {
 
     protected void createdCipherValueElement() throws XMLStreamException, CDOCException {
         writer.writeStartElement(xmlEncPrefix("CipherValue"));
-
         beginCharacterWriting(writer);
+        try {
+            // flush everything that writer wrote prior writing directly to outputstream
+            writer.flush();
+        } catch (XMLStreamException e) {
+            formXmlTransformException("Error on XML writer flush", e);
+        }
+
         if (dataFiles.size() > 1) {
             LOGGER.debug("Multiple data files set - composing data files DDOC..");
             constructDataFilesXml();
@@ -252,10 +255,10 @@ public class XmlEncComposer {
 
     private Cipher constructEncryptionCipher(byte[] iv) throws EncryptionException {
         try {
-            Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+            Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding", "BC");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));
             return cipher;
-        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | NoSuchPaddingException | InvalidKeyException e) {
+        } catch (GeneralSecurityException e) {
             throw new EncryptionException("Failed to construct AES CBC cipher", e);
         }
     }
@@ -293,11 +296,16 @@ public class XmlEncComposer {
                 InputStream inputStream = dataFile.getContent()
         ) {
             beginCharacterWriting(innerWriter);
+            try {
+                // flush everything that writer wrote prior writing directly to outputstream
+                innerWriter.flush();
+            } catch (XMLStreamException e) {
+                formXmlTransformException("Error on XML writer flush", e);
+            }
             IOUtils.copy(inputStream, base64Output, 1024);
         } catch (IOException e) {
             throw formEncryptionException("Failed to base64 encode DDOC content", e);
         }
-
         innerWriter.writeEndElement();
     }
 

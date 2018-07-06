@@ -86,7 +86,7 @@ public class CDOC10BuilderTest {
                 .withRecipient(certificateInputStream)
                 .buildToByteArray();
 
-        assertEquals(3690, cdocBytes.length);
+        assertEquals(3689, cdocBytes.length);
         assertStreamClosed(dataFile.getContent());
         assertStreamClosed(certificateInputStream);
     }
@@ -106,7 +106,7 @@ public class CDOC10BuilderTest {
 
             assertTrue(CDOCStream instanceof ByteArrayInputStream);
             int contentLength = ((ByteArrayInputStream) CDOCStream).available();
-            assertEquals(3664, contentLength);
+            assertEquals(3663, contentLength);
             assertStreamClosed(dataFile.getContent());
             assertStreamClosed(certificateInputStream);
 
@@ -134,7 +134,7 @@ public class CDOC10BuilderTest {
 
             assertTrue(CDOCStream instanceof ByteArrayInputStream);
             int contentLength = ((ByteArrayInputStream) CDOCStream).available();
-            assertEquals(4412, contentLength);
+            assertEquals(4387, contentLength);
 
             for (DataFile dataFile : dataFiles) {
                 assertStreamClosed(dataFile.getContent());
@@ -158,7 +158,7 @@ public class CDOC10BuilderTest {
                     .withRecipient(certificateInputStream)
                     .buildToFile(destinationFile);
 
-            assertEquals(3664, destinationFile.length());
+            assertEquals(3663, destinationFile.length());
             assertStreamClosed(dataFile.getContent());
             assertStreamClosed(certificateInputStream);
         }
@@ -183,7 +183,7 @@ public class CDOC10BuilderTest {
                     .withRecipient(certificateInputStream)
                     .buildToFile(destinationFile);
 
-            assertEquals(4412, destinationFile.length());
+            assertEquals(4387, destinationFile.length());
             for (DataFile dataFile : dataFiles) {
                 assertStreamClosed(dataFile.getContent());
             }
@@ -210,7 +210,7 @@ public class CDOC10BuilderTest {
                     .withRecipient(certificateInputStream)
                     .buildToOutputStream(output);
 
-            assertEquals(4412, output.size());
+            assertEquals(4387, output.size());
             for (DataFile dataFile : dataFiles) {
                 assertStreamClosed(dataFile.getContent());
             }

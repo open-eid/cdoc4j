@@ -78,7 +78,7 @@ public class XmlEncParser {
                 XmlEncParserUtil.readBase64DecodedAndEncryptedCharacters(reader, outputWriter, 1024);
             }
         } catch (XMLStreamException | IOException e) {
-            throw formXmlParseException("Error parsing base 64 decoded and encrypted payload from CDOC!", e);
+            throw formXmlParseException("Error parsing and base64 decoded and encrypted payload from CDOC!", e);
         }
     }
 

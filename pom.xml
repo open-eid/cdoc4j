@@ -59,9 +59,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>stax2-api</artifactId>
-            <version>4.1</version>
+            <groupId>com.fasterxml.woodstox</groupId>
+            <artifactId>woodstox-core</artifactId>
+            <version>5.1.0</version>
         </dependency>
         <dependency>
             <groupId>net.java.dev.stax-utils</groupId>

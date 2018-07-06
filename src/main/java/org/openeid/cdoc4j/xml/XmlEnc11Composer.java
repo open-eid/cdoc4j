@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyAgreement;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.stream.XMLStreamException;
@@ -195,7 +194,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
             concatenationKDFGenerator.generateBytes(wrapKeyBytes, 0, 32);
 
             SecretKeySpec wrapKey = new SecretKeySpec(wrapKeyBytes, "AES");
-            Cipher cipher = Cipher.getInstance("AESWrap");
+            Cipher cipher = Cipher.getInstance("AESWrap", "BC");
             cipher.init(Cipher.WRAP_MODE, wrapKey);
             byte[] wrappedKey = cipher.wrap(secretKey);
             writer.writeCharacters(Base64.toBase64String(wrappedKey));
@@ -263,11 +262,11 @@ public class XmlEnc11Composer extends XmlEncComposer {
 
     private Cipher constructEncryptionCipher(byte[] IV) throws EncryptionException {
         try {
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", "BC");
             GCMParameterSpec params = new GCMParameterSpec(128, IV);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, params);
             return cipher;
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException | InvalidKeyException e) {
+        } catch (GeneralSecurityException e) {
             throw new EncryptionException("Failed to construct AES GCM encryption cipher", e);
         }
     }

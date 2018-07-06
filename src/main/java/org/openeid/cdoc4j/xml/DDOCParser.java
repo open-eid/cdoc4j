@@ -1,5 +1,6 @@
 package org.openeid.cdoc4j.xml;
 
+import com.ctc.wstx.stax.WstxInputFactory;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.stream.CustomOutputStreamWriter;
 import org.openeid.cdoc4j.stream.base64.Base64OutputStream;
@@ -22,7 +23,7 @@ public class DDOCParser {
     private final File fileDestinationDirectory;
 
     public DDOCParser(InputStream inputStream, File fileDestinationDirectory) throws XMLStreamException {
-        XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
+        XMLInputFactory xmlInputFactory = WstxInputFactory.newInstance();
         xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false); // This disables DTDs entirely for that factory
         xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false); // disable external entities
 

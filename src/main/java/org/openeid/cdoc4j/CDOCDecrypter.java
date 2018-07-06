@@ -1,5 +1,6 @@
 package org.openeid.cdoc4j;
 
+import com.ctc.wstx.stax.WstxInputFactory;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
@@ -113,7 +114,7 @@ public class CDOCDecrypter {
         LOGGER.info("Start decrypting payload from CDOC");
         validateParameters();
 
-        XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
+        XMLInputFactory xmlInputFactory = WstxInputFactory.newInstance();
         xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false); // This disables DTDs entirely for that factory
         xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false); // disable external entities
 
@@ -194,7 +195,7 @@ public class CDOCDecrypter {
             concatenationKDFGenerator.generateBytes(wrapperKeyBytes, 0, 32);
             SecretKeySpec wrapperKey = new SecretKeySpec(wrapperKeyBytes, "AES");
 
-            Cipher cipher = Cipher.getInstance("AESWrap");
+            Cipher cipher = Cipher.getInstance("AESWrap", "BC");
             cipher.init(Cipher.UNWRAP_MODE, wrapperKey);
             return (SecretKey) cipher.unwrap(recipient.getEncryptedKey(), "AES", Cipher.SECRET_KEY);
         } catch (GeneralSecurityException | IOException e) {
