@@ -103,7 +103,7 @@ public class XmlEncParser {
         return new DecryptionCipherOutputStream(paddingRemovalStream, blockCipher, IV);
     }
 
-    public List<DataFile> parseAndDecryptDDOCPayload(final EncryptionMethod encryptionMethod, final SecretKey key, final File destinationDirectory) throws XmlParseException {
+    public List<File> parseAndDecryptDDOCPayload(final EncryptionMethod encryptionMethod, final SecretKey key, final File destinationDirectory) throws XmlParseException {
         try {
             try (final PipedInputStream pipedInputStream = new PipedInputStream();
                  PipedOutputStream pipedOutputStream = new PipedOutputStream()) {
@@ -113,7 +113,7 @@ public class XmlEncParser {
                 XmlEncParserUtil.goToElement(reader, "CipherValue");
 
                 Thread payloadDecryptionThread = formPayloadDecryptionThread(encryptionMethod, key, pipedOutputStream);
-                Callable<List<DataFile>> ddocParserThread = formDDOCParserThread(destinationDirectory, pipedInputStream);
+                Callable<List<File>> ddocParserThread = formDDOCParserThread(destinationDirectory, pipedInputStream);
 
                 try {
                     payloadDecryptionThread.start();
@@ -128,13 +128,13 @@ public class XmlEncParser {
         }
     }
 
-    private Callable<List<DataFile>> formDDOCParserThread(final File destinationDirectory, final PipedInputStream pipedInputStream) {
-        return new Callable<List<DataFile>>() {
+    private Callable<List<File>> formDDOCParserThread(final File destinationDirectory, final PipedInputStream pipedInputStream) {
+        return new Callable<List<File>>() {
                         @Override
-                        public List<DataFile> call() throws XmlParseException {
+                        public List<File> call() throws XmlParseException {
                             try {
                                 DDOCParser ddocParser = new DDOCParser(pipedInputStream, destinationDirectory);
-                                List<DataFile> parsedDataFiles = ddocParser.parseDataFiles();
+                                List<File> parsedDataFiles = ddocParser.parseDataFiles();
                                 ddocParser.close();
                                 pipedInputStream.close();
                                 return parsedDataFiles;

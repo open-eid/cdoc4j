@@ -24,6 +24,16 @@ import java.util.List;
  * <li><b>{@link DataFile}</b> - the file to be encrypted (at least one is mandatory, also supports multiple files)</li>
  * <li><b>{@link X509Certificate}</b> - recipient a.k.a. receiver (mandatory, also supports multiple recipients)</li>
  * </ul>
+ * <p>
+ *   <b>Example of encrypting file into CDOC</b>
+ * </p>
+ * <p><code>
+ *   DataFile dataFile = new DataFile(new File("/path/to/file")); <br/>
+ *   CDOCBuilder.defaultVersion() <br/>
+ *   &nbsp;&nbsp;.withDataFile(dataFile) <br/>
+ *   &nbsp;&nbsp;.withRecipient(certificate) <br/>
+ *   &nbsp;&nbsp;.buildToFile(new File("/path/to/cdoc")); <br/>
+ * </code></p>
  */
 public abstract class CDOCBuilder {
 
@@ -99,14 +109,14 @@ public abstract class CDOCBuilder {
     }
 
     /**
-     * Adds data files
+     * Adds data file
      *
-     * @param dataFiles of the recipient
+     * @param dataFiles to be encrypted
      * @return this builder
      */
     public CDOCBuilder withDataFiles(List<DataFile> dataFiles) {
-        for (DataFile dataFile : dataFiles) {
-            withDataFile(dataFile);
+        for (DataFile file : dataFiles) {
+            withDataFile(file);
         }
         return this;
     }
@@ -162,21 +172,6 @@ public abstract class CDOCBuilder {
     public void buildToFile(File file) throws CDOCException, FileNotFoundException {
         this.output = new FileOutputStream(file);
         build();
-    }
-
-    public ByteArrayInputStream buildToByteArrayInputStream() throws CDOCException {
-        this.output = new ByteArrayOutputStream();
-        build();
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(((ByteArrayOutputStream) output).toByteArray());
-        return inputStream;
-    }
-
-    @Deprecated
-    public byte[] buildToByteArray() throws CDOCException {
-        this.output = new ByteArrayOutputStream();
-        build();
-        byte[] bytes = ((ByteArrayOutputStream) output).toByteArray();
-        return bytes;
     }
 
     public void buildToOutputStream(OutputStream outputStream) throws CDOCException {

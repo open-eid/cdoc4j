@@ -44,18 +44,20 @@ import java.util.List;
  * <p><code>
  *   PKCS11TokenParams params = new PKCS11TokenParams("/path/to/pkcs11/driver", "your PIN1", 0);
  *   PKCS11Token token = new PKCS11Token(params) <br/>
- *   List<DataFile> dataFiles = new CDOCDecrypter() <br/>
+ *   List<File> dataFiles = new CDOCDecrypter() <br/>
  *   &nbsp;&nbsp;.withToken(token) <br/>
- *   &nbsp;&nbsp;.decrypt(new FileInputStream(cdoc)); <br/>
+ *   &nbsp;&nbsp;.withCDOC(new File("/path/to/cdoc")) <br/>
+ *   &nbsp;&nbsp;.decrypt(new File("path/to/target/directory")); <br/>
  * </code></p>
  * <p>
  *   <b>Example of decrypting CDOC document with PKCS#12:</b>
  * </p>
  * <p><code>
  *   PKCS12Token token = new PKCS12Token("/path/to/pkcs12/file", "some password") <br/>
- *   List<DataFile> dataFiles = new CDOCDecrypter() <br/>
+ *   List<File> dataFiles = new CDOCDecrypter() <br/>
  *   &nbsp;&nbsp;.withToken(token) <br/>
- *   &nbsp;&nbsp;.decrypt(new FileInputStream(cdoc)); <br/>
+ *   &nbsp;&nbsp;.withCDOC(new File("/path/to/cdoc")) <br/>
+ *   &nbsp;&nbsp;.decrypt(new File("path/to/target/directory")); <br/>
  * </code></p>
  */
 public class CDOCDecrypter {
@@ -81,36 +83,55 @@ public class CDOCDecrypter {
         return this;
     }
 
-    public CDOCDecrypter withCDOC(InputStream cdocInputStream) {
-        this.cdocInputStream = cdocInputStream;
+    /**
+     * Sets the to be decrypted CDOC
+     *
+     * @param inputStream of CDOC
+     * @return the current instance
+     */
+    public CDOCDecrypter withCDOC(InputStream inputStream) {
+        this.cdocInputStream = inputStream;
         return this;
-    }
-
-    public CDOCDecrypter withCDOC(File CDOC) throws FileNotFoundException {
-        this.cdocInputStream = new FileInputStream(CDOC);
-        return this;
-    }
-
-    public List<DataFile> decryptToDirectory(File file) throws CDOCException {
-        file.mkdirs();
-        if (!file.isDirectory()) {
-            throw new DecryptionException("File path must be an directory!");
-        }
-        this.destinationDirectory = file;
-        return decrypt();
-    }
-
-    public List<DataFile> decryptToByteArrayInputStream() throws CDOCException {
-        return decrypt();
     }
 
     /**
-     * decrypts the CDOC payload and returns the decrypted file(s)
+     * Sets the to be decrypted CDOC
+     *
+     * @param file
+     * @return the current instance
+     */
+    public CDOCDecrypter withCDOC(File file) throws FileNotFoundException {
+        this.cdocInputStream = new FileInputStream(file);
+        return this;
+    }
+
+    /**
+     * decrypts the CDOC into given directory and returns a list of decrypted file(s)
      *
      * @throws CDOCException when there's an error decrypting datafile(s) from the given CDOC document
-     * @return decrypted datafile(s)
+     * @param destinationDirectory where decrypted file(s) will be placed
+     * @return list of decrypted file(s)
      */
-    private List<DataFile> decrypt() throws CDOCException {
+    public List<File> decrypt(File destinationDirectory) throws CDOCException {
+        try {
+            destinationDirectory.mkdirs();
+            if (!destinationDirectory.isDirectory()) {
+                throw new DecryptionException("File path must be an directory!");
+            }
+            this.destinationDirectory = destinationDirectory;
+            return decrypt();
+        } finally {
+            IOUtils.closeQuietly(cdocInputStream);
+        }
+    }
+
+    /**
+     * decrypts the CDOC payload and returns a list of decrypted file(s)
+     *
+     * @throws CDOCException when there's an error decrypting file(s) from the given CDOC document
+     * @return list of decrypted file(s)
+     */
+    private List<File> decrypt() throws CDOCException {
         LOGGER.info("Start decrypting payload from CDOC");
         validateParameters();
 
@@ -130,11 +151,11 @@ public class CDOCDecrypter {
             Recipient recipient = chooseRecipient(xmlParser.getRecipients());
             SecretKey key = decryptKey(recipient, token);
 
-            List<DataFile> dataFiles;
+            List<File> dataFiles;
             if (encryptedPayloadIsDDOC(mimeType)) {
                 dataFiles = xmlParser.parseAndDecryptDDOCPayload(encryptionMethod, key, destinationDirectory);
             } else {
-                DataFile dataFile = parseSingleFilePayload(xmlParser, encryptionMethod, key);
+                File dataFile = parseAndDecryptPayloadToFile(xmlParser, encryptionMethod, key);
                 dataFiles = Collections.singletonList(dataFile);
             }
             LOGGER.info("Payload decryption completed successfully!");
@@ -261,14 +282,6 @@ public class CDOCDecrypter {
         return mimeType.equals("http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd");
     }
 
-    private DataFile parseSingleFilePayload(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
-        if (destinationDirectory == null) {
-            return parseAndDecryptPayloadToByteArrayStream(xmlParser, encryptionMethod, key);
-        } else {
-            return parseAndDecryptPayloadToFile(xmlParser, encryptionMethod, key);
-        }
-    }
-
     private DataFile parseAndDecryptPayloadToByteArrayStream(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             xmlParser.parseAndDecryptEncryptedDataPayload(output, encryptionMethod, key);
@@ -282,7 +295,7 @@ public class CDOCDecrypter {
         }
     }
 
-    private DataFile parseAndDecryptPayloadToFile(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
+    private File parseAndDecryptPayloadToFile(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
         File file = new File(destinationDirectory.getPath(), "TEMP_FILE_NAME.txt");
         try (FileOutputStream output = new FileOutputStream(file)) {
             xmlParser.parseAndDecryptEncryptedDataPayload(output, encryptionMethod, key);
@@ -290,7 +303,7 @@ public class CDOCDecrypter {
             output.close();
             File originalFile = new File(destinationDirectory.getPath(), originalFileName);
             file.renameTo(originalFile);
-            return new DataFile(originalFile);
+            return originalFile;
         } catch (IOException e) {
             throw new IllegalStateException("Failed to construct file output stream", e);
         }

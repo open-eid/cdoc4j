@@ -1,20 +1,29 @@
 package org.openeid.cdoc4j;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestUtil {
 
     public static void assertStreamClosed(InputStream inputStream) {
         try {
+            assertTrue(inputStream.read() == -1);
+        } catch (IOException e) {
+            assertTrue(e.getLocalizedMessage().equalsIgnoreCase("Stream closed"));
+        }
+    }
+
+    public static void assertStreamClosed(FileInputStream inputStream) {
+        try {
             inputStream.read();
+            fail("Stream expected to be closed!");
         } catch (IOException e) {
             assertTrue(e.getLocalizedMessage().equalsIgnoreCase("Stream closed"));
         }
@@ -25,36 +34,28 @@ public class TestUtil {
     }
 
     public static DataFile mockDataFile(byte[] dataContent) {
-        return new DataFile("test.txt", dataContent);
+        return new DataFile(UUID.randomUUID().toString() + "-test.txt", dataContent);
     }
 
-    public static void assertByteStreamDataFileContent(DataFile decryptedDataFile, String expectedFileName, String expectedContent) throws IOException {
-        assertByteStreamDataFileContent(decryptedDataFile, expectedFileName, expectedContent.getBytes(StandardCharsets.UTF_8));
-    }
-
-    public static void assertByteStreamDataFileContent(DataFile decryptedDataFile, String expectedFileName, byte[] expectedContent) throws IOException {
-        assertEquals(expectedFileName, decryptedDataFile.getName());
-        assertEquals(expectedContent.length, decryptedDataFile.getSize());
-
-        ByteArrayInputStream decryptedDataFileContent = (ByteArrayInputStream) decryptedDataFile.getContent();
-        byte[] decryptedFileContent = new byte[decryptedDataFileContent.available()];
-        decryptedDataFileContent.read(decryptedFileContent);
-
-        assertTrue(Arrays.equals(expectedContent, decryptedFileContent));
-    }
-
-    public static void assertFileDataFileContent(DataFile decryptedDataFile, String expectedFileName, String expectedContent) throws IOException {
+    public static void assertFileDataFileContent(File decryptedDataFile, String expectedFileName, String expectedContent) throws IOException {
         assertFileDataFileContent(decryptedDataFile, expectedFileName, expectedContent.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static void assertFileDataFileContent(DataFile decryptedDataFile, String expectedFileName, byte[] expectedContent) throws IOException {
+    public static void assertFileDataFileContent(File decryptedDataFile, String expectedFileName, byte[] expectedContent) throws IOException {
         assertEquals(expectedFileName, decryptedDataFile.getName());
-        assertEquals(expectedContent.length, decryptedDataFile.getSize());
+        assertEquals(expectedContent.length, decryptedDataFile.length());
 
-        FileInputStream decryptedDataFileContent = (FileInputStream) decryptedDataFile.getContent();
-        byte[] decryptedFileContent = new byte[decryptedDataFileContent.available()];
-        decryptedDataFileContent.read(decryptedFileContent);
+        try (FileInputStream decryptedDataFileContent = new FileInputStream(decryptedDataFile)) {
+            byte[] decryptedFileContent = new byte[decryptedDataFileContent.available()];
+            decryptedDataFileContent.read(decryptedFileContent);
 
-        assertTrue(Arrays.equals(expectedContent, decryptedFileContent));
+            assertTrue(Arrays.equals(expectedContent, decryptedFileContent));
+        }
+    }
+
+    public static void deleteTestFile(List<File> dataFiles) {
+        for (File file : dataFiles) {
+            file.delete();
+        }
     }
 }

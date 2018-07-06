@@ -28,21 +28,19 @@ public class CDOC11BuilderTest {
     @Test(expected = RecipientMissingException.class)
     public void buildCDOC11_withoutRecipient_shouldThrowException() throws CDOCException {
         DataFile dataFile = mockDataFile("test".getBytes());
-        try {
-            CDOCBuilder.version(version)
-                    .withDataFile(dataFile)
-                    .buildToByteArrayInputStream();
-        } finally {
-            assertStreamClosed(dataFile.getContent());
-        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CDOCBuilder.version(version)
+                .withDataFile(dataFile)
+                .buildToOutputStream(baos);
     }
 
     @Test(expected = DataFileMissingException.class)
     public void buildCDOC11_withoutDataFile_shouldThrowException() throws CDOCException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             CDOCBuilder.version(version)
                     .withRecipient(rsaAuthCertificate)
-                    .buildToByteArrayInputStream();
+                    .buildToOutputStream(baos);
         } finally {
             assertStreamClosed(rsaAuthCertificate);
         }
@@ -51,40 +49,37 @@ public class CDOC11BuilderTest {
     @Test(expected = RecipientCertificateException.class)
     public void buildCDOC11_withRecipientCertificateMissingKeyEnciphermentKeyUsage_shouldThrowException() throws CDOCException {
         DataFile dataFile = mockDataFile("test".getBytes());
-        try {
-            CDOCBuilder.version(version)
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CDOCBuilder.version(version)
                     .withDataFile(dataFile)
                     .withRecipient(rsaSignCertificate)
-                    .buildToByteArrayInputStream();
-        } finally {
-            assertStreamClosed(rsaAuthCertificate);
-            assertStreamClosed(dataFile.getContent());
-        }
+                    .buildToOutputStream(baos);
     }
 
     @Test(expected = RecipientCertificateException.class)
     public void buildCDOC11_withRecipientECCertificateMissingKeyAgreementKeyUsage_shouldThrowException() throws CDOCException {
         DataFile dataFile = mockDataFile("test".getBytes());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             CDOCBuilder.version(version)
                     .withDataFile(dataFile)
                     .withRecipient(eccSignCertificate)
-                    .buildToByteArrayInputStream();
+                    .buildToOutputStream(baos);
         } finally {
             assertStreamClosed(eccSignCertificate);
-            assertStreamClosed(dataFile.getContent());
         }
     }
 
     @Test
     public void buildCDOC11_withRSACertificate_toByteArray_withSingleFile_shouldSucceed() throws CDOCException {
         DataFile dataFile = new DataFile(testFileName, "test data content".getBytes(StandardCharsets.UTF_8));
-        byte[] cdocBytes = CDOCBuilder.version(version)
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CDOCBuilder.version(version)
                 .withDataFile(dataFile)
                 .withRecipient(rsaAuthCertificate)
-                .buildToByteArray();
+                .buildToOutputStream(baos);
 
-        assertEquals(3658, cdocBytes.length);
+        assertEquals(3658, baos.size());
         assertStreamClosed(dataFile.getContent());
         assertStreamClosed(rsaAuthCertificate);
     }
@@ -95,18 +90,15 @@ public class CDOC11BuilderTest {
             ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("test data content".getBytes(StandardCharsets.UTF_8));
         ) {
             DataFile dataFile = new DataFile(testFileName, fileToDecrypt);
-            InputStream inputStream = CDOCBuilder.version(version)
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            CDOCBuilder.version(version)
                     .withDataFile(dataFile)
                     .withRecipient(eccAuthCertificate)
-                    .buildToByteArrayInputStream();
+                    .buildToOutputStream(baos);
 
-            assertTrue(inputStream instanceof ByteArrayInputStream);
-            int contentLength = ((ByteArrayInputStream) inputStream).available();
-            assertEquals(7998, contentLength);
+            assertEquals(7998, baos.size());
             assertStreamClosed(dataFile.getContent());
             assertStreamClosed(eccAuthCertificate);
-
-            inputStream.close();
         }
     }
 
@@ -121,21 +113,18 @@ public class CDOC11BuilderTest {
                     new DataFile(testFileName, fileToDecrypt),
                     new DataFile(testFileName, fileToDecrypt2)
             );
-
-            InputStream inputStream = CDOCBuilder.version(version)
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            CDOCBuilder.version(version)
                     .withDataFiles(dataFiles)
                     .withRecipient(rsaAuthCertificate)
-                    .buildToByteArrayInputStream();
+                    .buildToOutputStream(baos);
 
-            assertTrue(inputStream instanceof ByteArrayInputStream);
-            int contentLength = ((ByteArrayInputStream) inputStream).available();
-            assertEquals(4382, contentLength);
+            assertEquals(4382, baos.size());
 
             for (DataFile dataFile : dataFiles) {
                 assertStreamClosed(dataFile.getContent());
             }
             assertStreamClosed(rsaAuthCertificate);
-            inputStream.close();
         }
     }
 
