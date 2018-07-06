@@ -24,6 +24,11 @@
             <organization>Nortal</organization>
             <organizationUrl>http://www.nortal.com</organizationUrl>
         </developer>
+        <developer>
+            <name>Jorgen Heinsoo</name>
+            <organization>Nortal</organization>
+            <organizationUrl>http://www.nortal.com</organizationUrl>
+        </developer>
     </developers>
     <scm>
         <connection>scm:git:git@github.com:open-eid/cdoc4j.git</connection>
