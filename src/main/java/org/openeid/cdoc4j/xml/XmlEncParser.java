@@ -52,21 +52,6 @@ public class XmlEncParser {
         }
     }
 
-    protected List<Recipient> getAllRecipients() throws XmlParseException, XMLStreamException {
-        List<Recipient> recipients = new ArrayList<>();
-        while (XmlEncParserUtil.nextElementIs(reader, "EncryptedKey")) {
-            String recipientCN = XmlEncParserUtil.getAttributeValue(reader, "Recipient");
-            recipients.add(parseRecipient(recipientCN));
-        }
-        return recipients;
-    }
-
-    protected Recipient parseRecipient(String recipientCN) throws XmlParseException {
-        X509Certificate certificate = extractCertificate();
-        byte[] encryptedKey = extractEncryptedKey();
-        return new RSARecipient(recipientCN, certificate, encryptedKey);
-    }
-
     public void parseAndDecryptEncryptedDataPayload(OutputStream output, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
         try {
             XmlEncParserUtil.goToElement(reader, "CipherValue");
@@ -80,27 +65,6 @@ public class XmlEncParser {
         } catch (XMLStreamException | IOException e) {
             throw formXmlParseException("Error parsing and base64 decoded and encrypted payload from CDOC!", e);
         }
-    }
-
-    private byte[] parseIVFromEncryptedFile(int IVLength) throws XMLStreamException {
-        reader.next();
-        int contentTotalLength = reader.getTextLength();
-
-        int safeIVParsingBufferSize = contentTotalLength > IVLength * 2 ? IVLength * 2 : contentTotalLength;
-        char[] buffer = new char[safeIVParsingBufferSize];
-        reader.getTextCharacters(0, buffer, 0, safeIVParsingBufferSize);
-        byte[] base64EncodedAndEncryptedFilePrefix = Base64.decode(new String(buffer).getBytes(StandardCharsets.UTF_8));
-        return Arrays.copyOfRange(base64EncodedAndEncryptedFilePrefix, 0, IVLength);
-    }
-
-    protected OutputStream constructCipherOutputStream(OutputStream output, SecretKey key, byte[] IV) {
-        CBCBlockCipher cbcBlockCipher = new CBCBlockCipher(new AESEngine());
-        KeyParameter keyParam = new KeyParameter(key.getEncoded());
-        cbcBlockCipher.init(false, new ParametersWithIV(keyParam, IV));
-
-        PaddedBufferedBlockCipher blockCipher = new PaddedBufferedBlockCipher(cbcBlockCipher, new PKCS7Padding());
-        PaddingRemovalOutputStream paddingRemovalStream = new PaddingRemovalOutputStream(output);
-        return new DecryptionCipherOutputStream(paddingRemovalStream, blockCipher, IV);
     }
 
     public List<File> parseAndDecryptDDOCPayload(final EncryptionMethod encryptionMethod, final SecretKey key, final File destinationDirectory) throws XmlParseException {
@@ -128,45 +92,39 @@ public class XmlEncParser {
         }
     }
 
-    private Callable<List<File>> formDDOCParserThread(final File destinationDirectory, final PipedInputStream pipedInputStream) {
-        return new Callable<List<File>>() {
-                        @Override
-                        public List<File> call() throws XmlParseException {
-                            try {
-                                DDOCParser ddocParser = new DDOCParser(pipedInputStream, destinationDirectory);
-                                List<File> parsedDataFiles = ddocParser.parseDataFiles();
-                                ddocParser.close();
-                                pipedInputStream.close();
-                                return parsedDataFiles;
-                            } catch (XmlParseException | IOException | XMLStreamException e) {
-                                throw formXmlParseException("Failed to parse DDOC", e);
-                            }
-                        }
-                    };
-    }
-
-    private Thread formPayloadDecryptionThread(final EncryptionMethod encryptionMethod, final SecretKey key, final PipedOutputStream pipedOutputStream) {
-        return new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                parseAndDecryptEncryptedDataPayload(pipedOutputStream, encryptionMethod, key);
-                                pipedOutputStream.close();
-                            } catch (IOException | CDOCException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-    }
-
     public String getOriginalFileName() throws XmlParseException {
         try {
             XmlEncParserUtil.goToElement(reader, "EncryptionProperties");
             XmlEncParserUtil.goToElementWithAttributeValue(reader, "EncryptionProperty", "Name", "Filename");
             return XmlEncParserUtil.readCharacters(reader);
         } catch (XMLStreamException e) {
-            throw formXmlParseException("Error parsing encrypted method from CDOC", e);
+            throw formXmlParseException("Error parsing original file name from CDOC", e);
         }
+    }
+
+    protected List<Recipient> getAllRecipients() throws XmlParseException, XMLStreamException {
+        List<Recipient> recipients = new ArrayList<>();
+        while (XmlEncParserUtil.nextElementIs(reader, "EncryptedKey")) {
+            String recipientCN = XmlEncParserUtil.getAttributeValue(reader, "Recipient");
+            recipients.add(parseRecipient(recipientCN));
+        }
+        return recipients;
+    }
+
+    protected OutputStream constructCipherOutputStream(OutputStream output, SecretKey key, byte[] IV) {
+        CBCBlockCipher cbcBlockCipher = new CBCBlockCipher(new AESEngine());
+        KeyParameter keyParam = new KeyParameter(key.getEncoded());
+        cbcBlockCipher.init(false, new ParametersWithIV(keyParam, IV));
+
+        PaddedBufferedBlockCipher blockCipher = new PaddedBufferedBlockCipher(cbcBlockCipher, new PKCS7Padding());
+        PaddingRemovalOutputStream paddingRemovalStream = new PaddingRemovalOutputStream(output);
+        return new DecryptionCipherOutputStream(paddingRemovalStream, blockCipher, IV);
+    }
+
+    protected Recipient parseRecipient(String recipientCN) throws XmlParseException {
+        X509Certificate certificate = extractCertificate();
+        byte[] encryptedKey = extractEncryptedKey();
+        return new RSARecipient(recipientCN, certificate, encryptedKey);
     }
 
     protected X509Certificate extractCertificate() throws XmlParseException {
@@ -208,5 +166,47 @@ public class XmlEncParser {
     protected XmlParseException formXmlParseException(String errorMessage, Exception exception) {
         LOGGER.error(errorMessage, exception);
         return new XmlParseException(errorMessage, exception);
+    }
+
+    private byte[] parseIVFromEncryptedFile(int IVLength) throws XMLStreamException {
+        reader.next();
+        int contentTotalLength = reader.getTextLength();
+
+        int safeIVParsingBufferSize = contentTotalLength > IVLength * 2 ? IVLength * 2 : contentTotalLength;
+        char[] buffer = new char[safeIVParsingBufferSize];
+        reader.getTextCharacters(0, buffer, 0, safeIVParsingBufferSize);
+        byte[] base64EncodedAndEncryptedFilePrefix = Base64.decode(new String(buffer).getBytes(StandardCharsets.UTF_8));
+        return Arrays.copyOfRange(base64EncodedAndEncryptedFilePrefix, 0, IVLength);
+    }
+
+    private Callable<List<File>> formDDOCParserThread(final File destinationDirectory, final PipedInputStream pipedInputStream) {
+        return new Callable<List<File>>() {
+                        @Override
+                        public List<File> call() throws XmlParseException {
+                            try {
+                                DDOCParser ddocParser = new DDOCParser(pipedInputStream, destinationDirectory);
+                                List<File> parsedDataFiles = ddocParser.parseDataFiles();
+                                ddocParser.close();
+                                pipedInputStream.close();
+                                return parsedDataFiles;
+                            } catch (XmlParseException | IOException | XMLStreamException e) {
+                                throw formXmlParseException("Failed to parse DDOC", e);
+                            }
+                        }
+                    };
+    }
+
+    private Thread formPayloadDecryptionThread(final EncryptionMethod encryptionMethod, final SecretKey key, final PipedOutputStream pipedOutputStream) {
+        return new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                parseAndDecryptEncryptedDataPayload(pipedOutputStream, encryptionMethod, key);
+                                pipedOutputStream.close();
+                            } catch (IOException | CDOCException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
     }
 }

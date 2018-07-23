@@ -282,19 +282,6 @@ public class CDOCDecrypter {
         return mimeType.equals("http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd");
     }
 
-    private DataFile parseAndDecryptPayloadToByteArrayStream(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
-        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            xmlParser.parseAndDecryptEncryptedDataPayload(output, encryptionMethod, key);
-            String originalFileName = xmlParser.getOriginalFileName();
-
-            // TODO: Could be improved by using piped streams.
-            ByteArrayInputStream endInput = new ByteArrayInputStream(output.toByteArray());
-            return new DataFile(originalFileName, endInput, output.size());
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to close ByteArrayOutputStream", e);
-        }
-    }
-
     private File parseAndDecryptPayloadToFile(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
         File file = new File(destinationDirectory.getPath(), "TEMP_FILE_NAME.txt");
         try (FileOutputStream output = new FileOutputStream(file)) {

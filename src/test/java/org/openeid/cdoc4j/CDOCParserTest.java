@@ -51,4 +51,44 @@ public class CDOCParserTest {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/invalid_cdoc11_structure.cdoc");
         CDOCParser.getDataFileNames(cdocStream);
     }
+
+    @Test
+    public void getRecipients_cdoc10_withOneRecipient() throws XmlParseException, FileNotFoundException {
+        FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10.cdoc");
+        List<Recipient> recipients = CDOCParser.getRecipients(cdocStream);
+        assertTrue(recipients.size() == 1);
+        assertEquals("ŽÕRINÜWŠKY,MÄRÜ-LÖÖZ,11404176865", recipients.get(0).getCN());
+    }
+
+    @Test
+    public void getRecipients_cdoc10_withMultipleRecipients() throws XmlParseException, FileNotFoundException {
+        FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10_withMultipleRecipients.cdoc");
+        List<Recipient> recipients = CDOCParser.getRecipients(cdocStream);
+        assertTrue(recipients.size() == 2);
+        assertEquals("ŽÕRINÜWŠKY,MÄRÜ-LÖÖZ,11404176865", recipients.get(0).getCN());
+        assertEquals("ŽÕRINÜWŠKY,MÄRÜ-LÖÖZ,11404176865", recipients.get(1).getCN());
+    }
+
+    @Test
+    public void getRecipients_cdoc11_withOneRecipient() throws XmlParseException, FileNotFoundException {
+        FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc11_ECC.cdoc");
+        List<Recipient> recipients = CDOCParser.getRecipients(cdocStream);
+        assertTrue(recipients.size() == 1);
+        assertEquals("TESTNUMBER,ECC,14212128029", recipients.get(0).getCN());
+    }
+
+    @Test
+    public void getRecipients_cdoc11_withMultipleRecipients() throws XmlParseException, FileNotFoundException {
+        FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc11_withMultipleRecipients.cdoc");
+        List<Recipient> recipients = CDOCParser.getRecipients(cdocStream);
+        assertTrue(recipients.size() == 2);
+        assertEquals("TESTNUMBER,ECC,14212128029", recipients.get(0).getCN());
+        assertEquals("ŽÕRINÜWŠKY,MÄRÜ-LÖÖZ,11404176865", recipients.get(1).getCN());
+    }
+
+    @Test(expected = XmlParseException.class)
+    public void getDataFileNamesSuccessful_invalidCDOCStructure2() throws FileNotFoundException, XmlParseException {
+        FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/invalid_cdoc11_structure.cdoc");
+        CDOCParser.getRecipients(cdocStream);
+    }
 }

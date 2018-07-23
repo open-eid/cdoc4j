@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.openeid.cdoc4j.DataFile;
@@ -37,6 +38,10 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 
 public class XmlEnc11Composer extends XmlEncComposer {
+
+    static {
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XmlEncComposer.class);
 

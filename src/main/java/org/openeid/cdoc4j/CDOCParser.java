@@ -2,6 +2,8 @@ package org.openeid.cdoc4j;
 
 import com.ctc.wstx.stax.WstxInputFactory;
 import org.apache.commons.io.IOUtils;
+import org.openeid.cdoc4j.xml.XmlEncParser;
+import org.openeid.cdoc4j.xml.XmlEncParserFactory;
 import org.openeid.cdoc4j.xml.XmlEncParserUtil;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.slf4j.Logger;
@@ -43,6 +45,29 @@ public class CDOCParser {
             } catch (XMLStreamException e) {
                 throw new IllegalStateException("Failed to close XMLStreamReader", e);
             }
+        }
+    }
+
+    public static List<Recipient> getRecipients(InputStream cdocStream) throws XmlParseException {
+        XMLStreamReader cdocReader = initialiseXmlReader(cdocStream);
+        try {
+            XmlEncParserUtil.goToElement(cdocReader, "EncryptedData");
+            XmlEncParserUtil.goToElement(cdocReader, "EncryptionMethod");
+            String encryptionMethodUri = XmlEncParserUtil.getAttributeValue(cdocReader, "Algorithm");
+            EncryptionMethod encryptionMethod = EncryptionMethod.fromURI(encryptionMethodUri);
+            XmlEncParser xmlParser = XmlEncParserFactory.getXmlEncParser(encryptionMethod, cdocReader);
+            return xmlParser.getRecipients();
+        } catch (Exception e) {
+            throw new XmlParseException("Error parsing recipients from CDOC", e);
+        } finally {
+            if (cdocReader != null) {
+                try {
+                    cdocReader.close();
+                } catch (XMLStreamException e) {
+                    throw new IllegalStateException("Failed to close XMLStreamReader", e);
+                }
+            }
+            IOUtils.closeQuietly(cdocStream);
         }
     }
 

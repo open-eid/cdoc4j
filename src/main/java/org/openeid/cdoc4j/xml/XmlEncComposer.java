@@ -5,6 +5,7 @@ import javanet.staxutils.IndentingXMLStreamWriter;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.CountingOutputStream;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.EncryptionMethod;
@@ -31,11 +32,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
 public class XmlEncComposer {
+
+    static {
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(XmlEncComposer.class);
 
