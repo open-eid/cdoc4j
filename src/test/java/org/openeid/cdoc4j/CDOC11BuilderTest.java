@@ -86,103 +86,82 @@ public class CDOC11BuilderTest {
 
     @Test
     public void buildCDOC11_withECCertificate_toByteArrayStream_withSingleFile_shouldSucceed() throws CDOCException, IOException {
-        try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("test data content".getBytes(StandardCharsets.UTF_8));
-        ) {
-            DataFile dataFile = new DataFile(testFileName, fileToDecrypt);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            CDOCBuilder.version(version)
-                    .withDataFile(dataFile)
-                    .withRecipient(eccAuthCertificate)
-                    .buildToOutputStream(baos);
+        DataFile dataFile = new DataFile(testFileName, "test data content".getBytes(StandardCharsets.UTF_8));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CDOCBuilder.version(version)
+                .withDataFile(dataFile)
+                .withRecipient(eccAuthCertificate)
+                .buildToOutputStream(baos);
 
-            assertEquals(7998, baos.size());
-            assertStreamClosed(dataFile.getContent());
-            assertStreamClosed(eccAuthCertificate);
-        }
+        assertEquals(7998, baos.size());
+        assertStreamClosed(dataFile.getContent());
+        assertStreamClosed(eccAuthCertificate);
     }
 
     @Test
     public void buildCDOC11_withRSACertificate_toByteArrayStream_withDDOC_shouldSucceed() throws CDOCException, IOException {
+        List<DataFile> dataFiles = Arrays.asList(
+                new DataFile(testFileName, "some test content".getBytes(StandardCharsets.UTF_8)),
+                new DataFile(testFileName, "other test content".getBytes(StandardCharsets.UTF_8))
+        );
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CDOCBuilder.version(version)
+                .withDataFiles(dataFiles)
+                .withRecipient(rsaAuthCertificate)
+                .buildToOutputStream(baos);
 
-        try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("some test content".getBytes(StandardCharsets.UTF_8));
-            ByteArrayInputStream fileToDecrypt2 = new ByteArrayInputStream("other test content".getBytes(StandardCharsets.UTF_8))
-        ) {
-            List<DataFile> dataFiles = Arrays.asList(
-                    new DataFile(testFileName, fileToDecrypt),
-                    new DataFile(testFileName, fileToDecrypt2)
-            );
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            CDOCBuilder.version(version)
-                    .withDataFiles(dataFiles)
-                    .withRecipient(rsaAuthCertificate)
-                    .buildToOutputStream(baos);
+        assertEquals(4382, baos.size());
 
-            assertEquals(4382, baos.size());
-
-            for (DataFile dataFile : dataFiles) {
-                assertStreamClosed(dataFile.getContent());
-            }
-            assertStreamClosed(rsaAuthCertificate);
+        for (DataFile dataFile : dataFiles) {
+            assertStreamClosed(dataFile.getContent());
         }
+        assertStreamClosed(rsaAuthCertificate);
     }
 
     @Test
     public void buildCDOC11_withRSACertificate_toFile_withSingleFile_shouldSucceed() throws CDOCException, IOException {
         File destinationFile = new File("target/cdoc11-rsa-with-single-file.cdoc");
 
-        try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("some-test-data".getBytes(StandardCharsets.UTF_8));
-        ) {
-            DataFile dataFile = new DataFile(testFileName, fileToDecrypt);
-            CDOCBuilder.version(version)
-                    .withDataFile(dataFile)
-                    .withRecipient(rsaAuthCertificate)
-                    .buildToFile(destinationFile);
+        DataFile dataFile = new DataFile(testFileName, "some-test-data".getBytes(StandardCharsets.UTF_8));
+        CDOCBuilder.version(version)
+                .withDataFile(dataFile)
+                .withRecipient(rsaAuthCertificate)
+                .buildToFile(destinationFile);
 
-            assertEquals(3654, destinationFile.length());
-            assertStreamClosed(dataFile.getContent());
-            assertStreamClosed(rsaAuthCertificate);
-        }
+        assertEquals(3654, destinationFile.length());
+        assertStreamClosed(dataFile.getContent());
+        assertStreamClosed(rsaAuthCertificate);
     }
 
     @Test
     public void buildCDOC11_withRSACertificate_toFile_withDDOC_shouldSucceed() throws CDOCException, IOException {
         File destinationFile = new File("target/cdoc11-rsa-with-DDOC2.cdoc");
 
-        try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("some-test-data".getBytes(StandardCharsets.UTF_8));
-            ByteArrayInputStream fileToDecrypt2 = new ByteArrayInputStream("some-other-test-data".getBytes(StandardCharsets.UTF_8))
-        ) {
-            List<DataFile> dataFiles = Arrays.asList(
-                    new DataFile(testFileName, fileToDecrypt),
-                    new DataFile(testFileName, fileToDecrypt2)
-            );
+        List<DataFile> dataFiles = Arrays.asList(
+                new DataFile(testFileName, "some-test-data".getBytes(StandardCharsets.UTF_8)),
+                new DataFile(testFileName, "some-other-test-data".getBytes(StandardCharsets.UTF_8))
+        );
 
-            CDOCBuilder.version(version)
-                    .withDataFiles(dataFiles)
-                    .withRecipient(rsaAuthCertificate)
-                    .buildToFile(destinationFile);
+        CDOCBuilder.version(version)
+                .withDataFiles(dataFiles)
+                .withRecipient(rsaAuthCertificate)
+                .buildToFile(destinationFile);
 
-            assertEquals(4382, destinationFile.length());
-            for (DataFile dataFile : dataFiles) {
-                assertStreamClosed(dataFile.getContent());
-            }
-            assertStreamClosed(rsaAuthCertificate);
+        assertEquals(4382, destinationFile.length());
+        for (DataFile dataFile : dataFiles) {
+            assertStreamClosed(dataFile.getContent());
         }
+        assertStreamClosed(rsaAuthCertificate);
     }
 
     @Test
     public void buildCDOC11_withRSACertificate_toOutputStream_withDDOC_shouldSucceed() throws CDOCException, IOException {
         try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("some-test-data".getBytes(StandardCharsets.UTF_8));
-            ByteArrayInputStream fileToDecrypt2 = new ByteArrayInputStream("some-other-test-data".getBytes(StandardCharsets.UTF_8));
             ByteArrayOutputStream output = new ByteArrayOutputStream()
         ) {
             List<DataFile> dataFiles = Arrays.asList(
-                    new DataFile(testFileName, fileToDecrypt),
-                    new DataFile(testFileName, fileToDecrypt2)
+                    new DataFile(testFileName, "some-test-data".getBytes(StandardCharsets.UTF_8)),
+                    new DataFile(testFileName, "some-other-test-data".getBytes(StandardCharsets.UTF_8))
             );
 
             CDOCBuilder.version(version)

@@ -95,48 +95,39 @@ public class CDOC10BuilderTest {
     public void buildCDOC10_withRSACertificate_toByteArrayStream_withSingleFile_shouldSucceed() throws CDOCException, IOException {
         certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
 
-        try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("some-test-data".getBytes(StandardCharsets.UTF_8));
-        ) {
-            DataFile dataFile = new DataFile(testFileName, fileToDecrypt);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            CDOCBuilder.version(version)
-                    .withDataFile(dataFile)
-                    .withRecipient(certificateInputStream)
-                    .buildToOutputStream(baos);
+        DataFile dataFile = new DataFile(testFileName, "some-test-data".getBytes(StandardCharsets.UTF_8));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CDOCBuilder.version(version)
+                .withDataFile(dataFile)
+                .withRecipient(certificateInputStream)
+                .buildToOutputStream(baos);
 
-            assertEquals(3663, baos.size());
-            assertStreamClosed(dataFile.getContent());
-            assertStreamClosed(certificateInputStream);
-        }
+        assertEquals(3663, baos.size());
+        assertStreamClosed(dataFile.getContent());
+        assertStreamClosed(certificateInputStream);
     }
 
     @Test
     public void buildCDOC10_withRSACertificate_toByteArrayStream_withDDOC_shouldSucceed() throws CDOCException, IOException {
         certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
 
-        try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("some-test-data".getBytes(StandardCharsets.UTF_8));
-            ByteArrayInputStream fileToDecrypt2 = new ByteArrayInputStream("some-other-test-data".getBytes(StandardCharsets.UTF_8))
-        ) {
-            List<DataFile> dataFiles = Arrays.asList(
-                    new DataFile(testFileName, fileToDecrypt),
-                    new DataFile(testFileName, fileToDecrypt2)
-            );
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            CDOCBuilder.version(version)
-                    .withDataFile(dataFiles.get(0))
-                    .withDataFile(dataFiles.get(1))
-                    .withRecipient(certificateInputStream)
-                    .buildToOutputStream(baos);
+        List<DataFile> dataFiles = Arrays.asList(
+                new DataFile(testFileName, "some-test-data".getBytes(StandardCharsets.UTF_8)),
+                new DataFile(testFileName, "some-other-test-data".getBytes(StandardCharsets.UTF_8))
+        );
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CDOCBuilder.version(version)
+                .withDataFile(dataFiles.get(0))
+                .withDataFile(dataFiles.get(1))
+                .withRecipient(certificateInputStream)
+                .buildToOutputStream(baos);
 
-            assertEquals(4387, baos.size());
+        assertEquals(4387, baos.size());
 
-            for (DataFile dataFile : dataFiles) {
-                assertStreamClosed(dataFile.getContent());
-            }
-            assertStreamClosed(certificateInputStream);
+        for (DataFile dataFile : dataFiles) {
+            assertStreamClosed(dataFile.getContent());
         }
+        assertStreamClosed(certificateInputStream);
     }
 
     @Test
@@ -144,19 +135,15 @@ public class CDOC10BuilderTest {
         certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
         File destinationFile = new File("target/cdoc10-rsa-with-single-file.cdoc");
 
-        try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("some-test-data".getBytes(StandardCharsets.UTF_8));
-        ) {
-            DataFile dataFile = new DataFile(testFileName, fileToDecrypt);
-            CDOCBuilder.version(version)
-                    .withDataFile(dataFile)
-                    .withRecipient(certificateInputStream)
-                    .buildToFile(destinationFile);
+        DataFile dataFile = new DataFile(testFileName, "some-test-data".getBytes(StandardCharsets.UTF_8));
+        CDOCBuilder.version(version)
+                .withDataFile(dataFile)
+                .withRecipient(certificateInputStream)
+                .buildToFile(destinationFile);
 
-            assertEquals(3663, destinationFile.length());
-            assertStreamClosed(dataFile.getContent());
-            assertStreamClosed(certificateInputStream);
-        }
+        assertEquals(3663, destinationFile.length());
+        assertStreamClosed(dataFile.getContent());
+        assertStreamClosed(certificateInputStream);
     }
 
     @Test
@@ -164,27 +151,22 @@ public class CDOC10BuilderTest {
         certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
         File destinationFile = new File("target/cdoc10-rsa-with-DDOC2.cdoc");
 
-        try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("some-test-data".getBytes(StandardCharsets.UTF_8));
-            ByteArrayInputStream fileToDecrypt2 = new ByteArrayInputStream("some-other-test-data".getBytes(StandardCharsets.UTF_8))
-        ) {
-            List<DataFile> dataFiles = Arrays.asList(
-                    new DataFile(testFileName, fileToDecrypt),
-                    new DataFile(testFileName, fileToDecrypt2)
-            );
+        List<DataFile> dataFiles = Arrays.asList(
+                new DataFile(testFileName, "some-test-data".getBytes(StandardCharsets.UTF_8)),
+                new DataFile(testFileName, "some-other-test-data".getBytes(StandardCharsets.UTF_8))
+        );
 
-            CDOCBuilder.version(version)
-                    .withDataFile(dataFiles.get(0))
-                    .withDataFile(dataFiles.get(1))
-                    .withRecipient(certificateInputStream)
-                    .buildToFile(destinationFile);
+        CDOCBuilder.version(version)
+                .withDataFile(dataFiles.get(0))
+                .withDataFile(dataFiles.get(1))
+                .withRecipient(certificateInputStream)
+                .buildToFile(destinationFile);
 
-            assertEquals(4387, destinationFile.length());
-            for (DataFile dataFile : dataFiles) {
-                assertStreamClosed(dataFile.getContent());
-            }
-            assertStreamClosed(certificateInputStream);
+        assertEquals(4387, destinationFile.length());
+        for (DataFile dataFile : dataFiles) {
+            assertStreamClosed(dataFile.getContent());
         }
+        assertStreamClosed(certificateInputStream);
     }
 
     @Test
@@ -192,13 +174,11 @@ public class CDOC10BuilderTest {
         certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
 
         try (
-            ByteArrayInputStream fileToDecrypt = new ByteArrayInputStream("some-test-data".getBytes(StandardCharsets.UTF_8));
-            ByteArrayInputStream fileToDecrypt2 = new ByteArrayInputStream("some-other-test-data".getBytes(StandardCharsets.UTF_8));
             ByteArrayOutputStream output = new ByteArrayOutputStream()
         ) {
             List<DataFile> dataFiles = Arrays.asList(
-                    new DataFile(testFileName, fileToDecrypt),
-                    new DataFile(testFileName, fileToDecrypt2)
+                    new DataFile(testFileName, "some-test-data".getBytes(StandardCharsets.UTF_8)),
+                    new DataFile(testFileName, "some-other-test-data".getBytes(StandardCharsets.UTF_8))
             );
 
             CDOCBuilder.version(version)

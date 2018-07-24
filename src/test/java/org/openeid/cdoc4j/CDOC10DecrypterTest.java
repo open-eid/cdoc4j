@@ -94,7 +94,7 @@ public class CDOC10DecrypterTest {
     @Test
     public void buildAndDecryptCDOC10_RSA_fromMemory_toMemory_withSingleFile_shouldSucceed() throws Exception {
         String dataFileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-        DataFile dataFile = new DataFile(testFileName, new ByteArrayInputStream(dataFileContent.getBytes()));
+        DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes());
 
         List<File> dataFiles = buildAndDecryptToMemory(dataFile);
         assertFileDataFileContent(dataFiles.get(0), dataFile.getName(), dataFileContent.getBytes());
@@ -105,11 +105,11 @@ public class CDOC10DecrypterTest {
     @Test
     public void buildAndDecryptCDOC10_RSA_fromMemory_toMemory_withDDOC_shouldSucceed() throws Exception {
         String dataFileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-        DataFile dataFile = new DataFile("testFile1.txt", new ByteArrayInputStream(dataFileContent.getBytes()));
+        DataFile dataFile = new DataFile("testFile1.txt", dataFileContent.getBytes());
 
         String dataFileContent2 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce felis urna, consequat vel eros vel, " +
                 "ornare aliquet ante. Integer justo dolor, egestas nec mi vitae, semper consectetur odio.";
-        DataFile dataFile2 = new DataFile("testFile2.txt", new ByteArrayInputStream(dataFileContent2.getBytes()));
+        DataFile dataFile2 = new DataFile("testFile2.txt", dataFileContent2.getBytes());
 
         List<File> dataFiles = buildAndDecryptToMemory(dataFile, dataFile2);
         assertFileDataFileContent(dataFiles.get(0), dataFile.getName(), dataFileContent);
@@ -122,7 +122,7 @@ public class CDOC10DecrypterTest {
     @Test
     public void buildAndDecryptCDOC10_RSA_fromMemory_toMemory_withSingleFile_100times_shouldSucceed() throws Exception {
         for (String dataFileContent = "a"; dataFileContent.length() < 100; dataFileContent += 'a') {
-            DataFile dataFile = new DataFile(testFileName, new ByteArrayInputStream(dataFileContent.getBytes()));
+            DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes());
 
             List<File> dataFiles = buildAndDecryptToMemory(dataFile);
             assertFileDataFileContent(dataFiles.get(0), dataFile.getName(), dataFileContent.getBytes());
@@ -134,7 +134,7 @@ public class CDOC10DecrypterTest {
     @Test
     public void buildAndDecryptCDOC10_RSA_fromMemory_toMemory_withDDOC_100times_shouldSucceed() throws Exception {
         for (String dataFileContent = "a"; dataFileContent.length() < 100; dataFileContent += 'a') {
-            DataFile dataFile = new DataFile("testFile.txt", new ByteArrayInputStream(dataFileContent.getBytes()));
+            DataFile dataFile = new DataFile("testFile.txt", dataFileContent.getBytes());
             String dataFile2Content = "second_file_content";
             DataFile dataFile2 = mockDataFile(dataFile2Content);
             List<File> dataFiles = buildAndDecryptToMemory(dataFile, dataFile2);
@@ -158,11 +158,11 @@ public class CDOC10DecrypterTest {
     @Test
     public void buildAndDecryptCDOC10_RSA_fromFile_toFile_withDDOC_shouldSucceed() throws Exception {
         String dataFileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-        DataFile dataFile = new DataFile("testFile1.txt", new ByteArrayInputStream(dataFileContent.getBytes()));
+        DataFile dataFile = new DataFile("testFile1.txt", dataFileContent.getBytes());
 
         String dataFileContent2 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce felis urna, consequat vel eros vel, " +
                 "ornare aliquet ante. Integer justo dolor, egestas nec mi vitae, semper consectetur odio.";
-        DataFile dataFile2 = new DataFile("testFile2.txt", new ByteArrayInputStream(dataFileContent2.getBytes()));
+        DataFile dataFile2 = new DataFile("testFile2.txt", dataFileContent2.getBytes());
 
         List<File> dataFiles = buildAndDecryptToFile(dataFile, dataFile2);
         assertFileDataFileContent(dataFiles.get(0), dataFile.getName(), dataFileContent);

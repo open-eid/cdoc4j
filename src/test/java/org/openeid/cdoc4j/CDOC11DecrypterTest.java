@@ -80,7 +80,7 @@ public class CDOC11DecrypterTest {
     @Test
     public void buildAndDecryptCDOC11_RSA_fromMemory_toMemory_withSingleFile_shouldSucceed() throws Exception {
         String dataFileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-        DataFile dataFile = new DataFile(testFileName, new ByteArrayInputStream(dataFileContent.getBytes(StandardCharsets.UTF_8)));
+        DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
         InputStream certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -108,7 +108,7 @@ public class CDOC11DecrypterTest {
     @Test
     public void buildAndDecryptCDOC11_RSA_fromMemory_toMemory_withSingleFile_100times_shouldSucceed() throws Exception {
         for (String dataFileContent = ""; dataFileContent.length() < 100; dataFileContent += 'a') {
-            DataFile dataFile = new DataFile(testFileName, new ByteArrayInputStream(dataFileContent.getBytes(StandardCharsets.UTF_8)));
+            DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
             InputStream certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -138,7 +138,7 @@ public class CDOC11DecrypterTest {
     @Test
     public void buildAndDecryptCDOC11_RSA_fromMemory_toMemory_withDDOC_100times_shouldSucceed() throws Exception {
         for (String dataFileContent = ""; dataFileContent.length() < 100; dataFileContent += 'a') {
-            DataFile dataFile = new DataFile(testFileName, new ByteArrayInputStream(dataFileContent.getBytes(StandardCharsets.UTF_8)));
+            DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
             InputStream certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -170,7 +170,7 @@ public class CDOC11DecrypterTest {
     @Test
     public void buildAndDecryptCDOC11_EC_fromMemory_toMemory_withSingleFile_shouldSucceed() throws Exception {
         String dataFileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-        DataFile dataFile = new DataFile(testFileName, new ByteArrayInputStream(dataFileContent.getBytes(StandardCharsets.UTF_8)));
+        DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
         InputStream certificateInputStream = getClass().getResourceAsStream("/ecc/auth_cert.pem");
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -198,9 +198,9 @@ public class CDOC11DecrypterTest {
     @Test
     public void buildAndDecryptCDOC11_EC_fromMemory_toMemory_withDDOC_shouldSucceed() throws Exception {
         String dataFileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-        DataFile dataFile = new DataFile(testFileName, new ByteArrayInputStream(dataFileContent.getBytes(StandardCharsets.UTF_8)));
+        DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
         String dataFileContent2 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-        DataFile dataFile2 = new DataFile(testFileName, new ByteArrayInputStream(dataFileContent.getBytes(StandardCharsets.UTF_8)));
+        DataFile dataFile2 = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
 
         InputStream certificateInputStream = getClass().getResourceAsStream("/ecc/auth_cert.pem");
 

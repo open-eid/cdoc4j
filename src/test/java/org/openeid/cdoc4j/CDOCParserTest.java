@@ -1,10 +1,13 @@
 package org.openeid.cdoc4j;
 
 import org.junit.Test;
+import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -47,9 +50,16 @@ public class CDOCParserTest {
     }
 
     @Test(expected = XmlParseException.class)
-    public void getDataFileNamesSuccessful_invalidCDOCStructure() throws FileNotFoundException, XmlParseException {
+    public void getDataFileNames_withInvalidCDOCStructure_shouldThrowException() throws FileNotFoundException, XmlParseException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/invalid_cdoc11_structure.cdoc");
         CDOCParser.getDataFileNames(cdocStream);
+    }
+
+    @Test(expected = XmlParseException.class)
+    public void getDataFileNames_withEntityExpansionAttack_shouldThrowException() throws Exception {
+        InputStream cdocStream = getClass().getResourceAsStream("/cdoc/1.0-XXE.cdoc");
+        CDOCParser.getDataFileNames(cdocStream);
+
     }
 
     @Test
@@ -87,8 +97,14 @@ public class CDOCParserTest {
     }
 
     @Test(expected = XmlParseException.class)
-    public void getDataFileNamesSuccessful_invalidCDOCStructure2() throws FileNotFoundException, XmlParseException {
+    public void getRecipients__withInvalidCDOCStructure_shouldThrowException() throws FileNotFoundException, XmlParseException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/invalid_cdoc11_structure.cdoc");
         CDOCParser.getRecipients(cdocStream);
+    }
+
+    @Test(expected = XmlParseException.class)
+    public void getRecipients_withEntityExpansionAttack_shouldThrowException() throws Exception {
+        InputStream cdocStream = getClass().getResourceAsStream("/cdoc/1.0-XXE.cdoc");
+        CDOCParser.getDataFileNames(cdocStream);
     }
 }
