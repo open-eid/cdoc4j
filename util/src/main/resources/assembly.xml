@@ -6,14 +6,14 @@
         <format>zip</format>
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
-    <files>
-        <file>
-            <source>${project.build.directory}/cdoc4j-util-1.1.jar</source>
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}</directory>
             <outputDirectory></outputDirectory>
-        </file>
-        <file>
-            <source>${project.build.directory}/bcprov-jdk15on.jar</source>
-            <outputDirectory></outputDirectory>
-        </file>
-    </files>
+            <includes>
+                <include>cdoc4j-util-*.jar</include>
+                <include>bcprov-jdk15on.jar</include>
+            </includes>
+        </fileSet>
+    </fileSets>
 </assembly>
