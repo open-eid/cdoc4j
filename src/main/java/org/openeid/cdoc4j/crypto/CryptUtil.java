@@ -24,13 +24,13 @@ public class CryptUtil {
     }
 
     public static byte[] encryptRsa(byte[] bytesToEncrypt, X509Certificate certificate) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, certificate.getPublicKey());
         return cipher.doFinal(bytesToEncrypt);
     }
 
     public static byte[] decryptRsa(byte[] bytesToDecrypt, PrivateKey privateKey) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         return cipher.doFinal(bytesToDecrypt);
     }
