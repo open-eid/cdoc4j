@@ -5,7 +5,6 @@ import org.openeid.cdoc4j.RSARecipient;
 import org.openeid.cdoc4j.crypto.CryptUtil;
 import org.openeid.cdoc4j.exception.DecryptionException;
 import org.openeid.cdoc4j.token.Token;
-import org.openeid.cdoc4j.token.pkcs11.exception.IncorrectPinException;
 import org.openeid.cdoc4j.token.pkcs11.exception.PKCS11Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +14,9 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
@@ -25,6 +27,10 @@ import java.util.UUID;
 public class PKCS11Token implements Token {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PKCS11Token.class);
+
+    private static final String SUN_PKCS11_PROVIDERNAME = "SunPKCS11";
+
+    private static final String SUN_PKCS11_CLASSNAME = "sun.security.pkcs11.SunPKCS11";
 
     private Provider pkcs11Provider;
 
@@ -146,14 +152,7 @@ public class PKCS11Token implements Token {
             });
             return keyStore;
         } catch (Exception e) {
-            if (e instanceof sun.security.pkcs11.wrapper.PKCS11Exception) {
-                if ("CKR_PIN_INCORRECT".equals(e.getMessage())) {
-                    String message = "Incorrect PIN for PKCS#11";
-                    LOGGER.error(message, e);
-                    throw new IncorrectPinException(message, e);
-                }
-            }
-            String message = "Can't initialize Sun PKCS#11 security provider";
+            String message = "Can't initialize PKCS#11";
             LOGGER.error(message, e);
             throw new PKCS11Exception(message, e);
         }
@@ -185,7 +184,22 @@ public class PKCS11Token implements Token {
         }
     }
 
-    private void installProvider() {
+    private void installProvider() throws PKCS11Exception {
+        String config = buildConfig();
+        LOGGER.debug("PKCS11 Config : \n{}", config);
+
+        Provider provider;
+        if (isJavaGreaterOrEquals9()) {
+            provider = getProviderJavaGreaterOrEquals9(config);
+        } else {
+            provider = getProviderJavaLowerThan9(config);
+        }
+
+        pkcs11Provider = provider;
+        Security.addProvider(pkcs11Provider);
+    }
+
+    private String buildConfig() {
         /*
          * The smartCardNameIndex int is added at the end of the smartCard name in order to enable the successive
          * loading of multiple pkcs11 libraries.
@@ -195,18 +209,46 @@ public class PKCS11Token implements Token {
         String aPKCS11LibraryFileName = params.getPkcs11Path();
         aPKCS11LibraryFileName = escapePath(aPKCS11LibraryFileName);
 
-        String pkcs11ConfigSettings = "name = SmartCard" + UUID.randomUUID().toString() + "\n"
+        String pkcs11Config = "name = SmartCard" + UUID.randomUUID().toString() + "\n"
                 + "library = \"" + aPKCS11LibraryFileName + "\"\n"
                 + "slotListIndex = " + params.getSlot() + "\n"
                 + "attributes(*,CKO_SECRET_KEY,*) = {\n" + "  CKA_TOKEN = false\n" + "}" ;
 
-        byte[] pkcs11ConfigBytes = pkcs11ConfigSettings.getBytes();
-        ByteArrayInputStream confStream = new ByteArrayInputStream(pkcs11ConfigBytes);
+        return pkcs11Config;
+    }
 
-        sun.security.pkcs11.SunPKCS11 pkcs11 = new sun.security.pkcs11.SunPKCS11(confStream);
-        pkcs11Provider = pkcs11;
+    private boolean isJavaGreaterOrEquals9() {
+        try {
+            Provider provider = Security.getProvider(SUN_PKCS11_PROVIDERNAME);
+            if (provider != null) {
+                Method configureMethod = provider.getClass().getMethod("configure", String.class);
+                return configureMethod != null;
+            }
+        } catch (NoSuchMethodException e) {
+            // ignore
+        }
+        return false;
+    }
 
-        Security.addProvider(pkcs11Provider);
+    private Provider getProviderJavaGreaterOrEquals9(String configString) throws PKCS11Exception {
+        try {
+            Provider provider = Security.getProvider(SUN_PKCS11_PROVIDERNAME);
+            Method configureMethod = provider.getClass().getMethod("configure", String.class);
+            // "--" is permitted in the constructor sun.security.pkcs11.Config
+            return (Provider) configureMethod.invoke(provider, "--" + configString);
+        } catch (Exception e) {
+            throw new PKCS11Exception("Unable to instantiate PKCS11 for JDK >= 9", e);
+        }
+    }
+
+    private Provider getProviderJavaLowerThan9(String config) throws PKCS11Exception {
+        try (ByteArrayInputStream configStream = new ByteArrayInputStream(config.getBytes())) {
+            Class<?> sunPkcs11ProviderClass = Class.forName(SUN_PKCS11_CLASSNAME);
+            Constructor<?> constructor = sunPkcs11ProviderClass.getConstructor(InputStream.class);
+            return (Provider) constructor.newInstance(configStream);
+        } catch (Exception e) {
+            throw new PKCS11Exception("Unable to instantiate PKCS11 for JDK < 9 ", e);
+        }
     }
 
     private String escapePath(String pathToEscape) {
