@@ -1,5 +1,8 @@
 package org.openeid.cdoc4j;
 
+import static org.junit.Assert.*;
+import static org.openeid.cdoc4j.TestUtil.*;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.openeid.cdoc4j.exception.CDOCException;
@@ -10,9 +13,6 @@ import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.Assert.*;
-import static org.openeid.cdoc4j.TestUtil.*;
 
 public class CDOC10DecrypterTest {
 
@@ -75,6 +75,20 @@ public class CDOC10DecrypterTest {
     }
 
     @Test
+    public void decryptValidCDOC10_withDataFileResponse_withSingleFile_shouldSucceed() throws Exception {
+
+        FileInputStream cdocInputStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10.cdoc");
+        List<DataFile> dataFiles = new CDOCDecrypter()
+                .withToken(new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test"))
+                .withCDOC(cdocInputStream)
+                .decrypt();
+
+        assertSame(1, dataFiles.size());
+        assertDataFileContent(dataFiles.get(0), testFileName, "lorem ipsum");
+        assertStreamClosed(cdocInputStream);
+    }
+
+    @Test
     public void decryptValidCDOC10_withDDOCContaining2Files_shouldSucceed() throws Exception {
         PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
 
@@ -89,6 +103,22 @@ public class CDOC10DecrypterTest {
         assertFileDataFileContent(dataFiles.get(1), "lorem2.txt", "Lorem ipsum dolor sit amet");
         assertStreamClosed(cdocInputStream);
         deleteTestFile(dataFiles);
+    }
+
+    @Test
+    public void decryptValidCDOC10_withDataFileResponse_withDDOCContaining2Files_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+
+        FileInputStream cdocInputStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10_withDDOC.cdoc");
+        List<DataFile> dataFiles = new CDOCDecrypter()
+                .withToken(token)
+                .withCDOC(cdocInputStream)
+                .decrypt();
+
+        assertSame(2, dataFiles.size());
+        assertDataFileContent(dataFiles.get(0), "lorem1.txt", "lorem ipsum");
+        assertDataFileContent(dataFiles.get(1), "lorem2.txt", "Lorem ipsum dolor sit amet");
+        assertStreamClosed(cdocInputStream);
     }
 
     @Test

@@ -1,14 +1,15 @@
 package org.openeid.cdoc4j;
 
-import java.io.*;
+import static org.junit.Assert.*;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class TestUtil {
 
@@ -33,10 +34,23 @@ public class TestUtil {
         return mockDataFile(dataContent.getBytes(StandardCharsets.UTF_8));
     }
 
+    public static byte[] convertInputStreamToBytes(InputStream inputStream, long size) throws IOException {
+        byte[] bytes = new byte[(int)size];
+        inputStream.read(bytes, 0, (int)size);
+        inputStream.close();
+        return bytes;
+    }
+
     public static DataFile mockDataFile(byte[] dataContent) {
         return new DataFile(UUID.randomUUID().toString() + "-test.txt", dataContent);
     }
 
+    public static void assertDataFileContent(DataFile dataFile, String expectedFileName, String expectedContent) throws IOException {
+        assertEquals(expectedFileName, dataFile.getName());
+        byte[] bytes = convertInputStreamToBytes(dataFile.getContent(), dataFile.getSize());
+        assertEquals(expectedContent, new String(bytes, StandardCharsets.UTF_8));
+        assertStreamClosed(dataFile.getContent());
+    }
     public static void assertFileDataFileContent(File decryptedDataFile, String expectedFileName, String expectedContent) throws IOException {
         assertFileDataFileContent(decryptedDataFile, expectedFileName, expectedContent.getBytes(StandardCharsets.UTF_8));
     }

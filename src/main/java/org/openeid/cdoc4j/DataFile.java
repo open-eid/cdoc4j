@@ -3,7 +3,7 @@ package org.openeid.cdoc4j;
 import java.io.*;
 
 /**
- * Data file wrapper for handling files to be encrypted
+ * Data file wrapper for handling files
  */
 public class DataFile {
 
@@ -15,7 +15,7 @@ public class DataFile {
      * Creates data file
      *
      * @param name of the file
-     * @param content of the file
+     * @param content of the file. When using in decryption response it is ByteArrayInputStream object
      * @param size of content
      */
     public DataFile(String name, InputStream content, long size) {

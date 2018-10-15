@@ -1,6 +1,8 @@
 package org.openeid.cdoc4j;
 
 import com.ctc.wstx.stax.WstxInputFactory;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
@@ -24,6 +26,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+
 import java.io.*;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -33,6 +36,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -119,10 +123,34 @@ public class CDOCDecrypter {
                 throw new DecryptionException("File path must be an directory!");
             }
             this.destinationDirectory = destinationDirectory;
-            return decrypt();
+            return decryptCdoc();
         } finally {
             IOUtils.closeQuietly(cdocInputStream);
         }
+    }
+
+    /**
+     * decrypts the CDOC and returns a DataFile object list of decrypted file(s)
+     *
+     * @return DataFile object list of decrypted file(s)
+     * @throws CDOCException when there's an error decrypting datafile(s) from the given CDOC document
+     */
+    public List<DataFile> decrypt() throws CDOCException {
+        List<DataFile> dataFiles = new ArrayList<>();
+        try {
+            this.destinationDirectory = new File(System.getProperty("java.io.tmpdir"));
+            List<File> decryptedFiles = decryptCdoc();
+            for (File file : decryptedFiles) {
+                InputStream inputStream = new ByteArrayInputStream(FileUtils.readFileToByteArray(file));
+                file.delete();
+                DataFile dataFile = new DataFile(file.getName(), inputStream, inputStream.available());
+                dataFiles.add(dataFile);
+            }
+            return dataFiles;
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to construct file input stream", e);
+        }
+
     }
 
     /**
@@ -131,7 +159,7 @@ public class CDOCDecrypter {
      * @throws CDOCException when there's an error decrypting file(s) from the given CDOC document
      * @return list of decrypted file(s)
      */
-    private List<File> decrypt() throws CDOCException {
+    private List<File> decryptCdoc() throws CDOCException {
         LOGGER.info("Start decrypting payload from CDOC");
         validateParameters();
 
