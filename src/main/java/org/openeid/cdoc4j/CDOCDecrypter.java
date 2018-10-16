@@ -143,7 +143,7 @@ public class CDOCDecrypter {
             for (File file : decryptedFiles) {
                 InputStream inputStream = new ByteArrayInputStream(FileUtils.readFileToByteArray(file));
                 file.delete();
-                DataFile dataFile = new DataFile(file.getName(), inputStream, inputStream.available());
+                DataFile dataFile = new DataFile(file.getName(), inputStream, inputStream.available(), "application/octet-stream");
                 dataFiles.add(dataFile);
             }
             return dataFiles;

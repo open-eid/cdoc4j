@@ -9,19 +9,27 @@ public class DataFile {
 
     private String name;
     private long size;
+    private String mimeType;
     private InputStream content;
 
     /**
      * Creates data file
      *
      * @param name of the file
-     * @param content of the file. When using in decryption response it is ByteArrayInputStream object
+     * @param content of the file
      * @param size of content
      */
     public DataFile(String name, InputStream content, long size) {
         this.name = name;
         this.content = content;
         this.size = size;
+    }
+
+    protected DataFile(String name, InputStream content, long size, String mimeType) {
+        this.name = name;
+        this.content = content;
+        this.size = size;
+        this.mimeType = mimeType;
     }
 
     /**
@@ -58,7 +66,16 @@ public class DataFile {
         return size;
     }
 
+    /**
+     * Returns dataFile content. When using in decryption response it is ByteArrayInputStream object
+     *
+     * @return type
+     */
     public InputStream getContent() {
         return content;
+    }
+
+    public String getMimeType() {
+        return mimeType;
     }
 }

@@ -49,6 +49,7 @@ public class TestUtil {
         assertEquals(expectedFileName, dataFile.getName());
         byte[] bytes = convertInputStreamToBytes(dataFile.getContent(), dataFile.getSize());
         assertEquals(expectedContent, new String(bytes, StandardCharsets.UTF_8));
+        assertEquals("application/octet-stream", dataFile.getMimeType());
         assertStreamClosed(dataFile.getContent());
     }
     public static void assertFileDataFileContent(File decryptedDataFile, String expectedFileName, String expectedContent) throws IOException {
