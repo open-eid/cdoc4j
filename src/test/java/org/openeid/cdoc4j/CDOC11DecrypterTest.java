@@ -4,7 +4,9 @@ import static org.junit.Assert.assertSame;
 import static org.openeid.cdoc4j.TestUtil.*;
 
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.openeid.cdoc4j.token.pkcs11.PKCS11Token;
 import org.openeid.cdoc4j.token.pkcs11.PKCS11TokenParams;
 import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
@@ -12,12 +14,15 @@ import org.openeid.cdoc4j.xml.exception.XmlParseException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CDOC11DecrypterTest {
 
     private final String version = "1.1";
     private final String testFileName = "test.txt";
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
 
     @Test
     public void decryptValidCDOC11_RSA_withSingleFile_shouldSucceed() throws Exception {
@@ -46,6 +51,47 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
+    public void decryptValidCDOC11_RSA_withSingleFile_duplicateFilename_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+        File initialFile = new File("target/testdata/lorem2.txt");
+        initialFile.createNewFile();
+
+        List<File> dataFiles = new CDOCDecrypter()
+                .withToken(token)
+                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc"))
+                .decrypt(new File("target/testdata"));
+
+        assertFileDataFileContent(dataFiles.get(0), "lorem2.txt", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce felis urna, consequat vel eros vel, ornare aliquet ante. Integer justo dolor, egestas nec mi vitae, semper consectetur odio. Morbi sagittis egestas leo, vel molestie ligula condimentum vitae. Aliquam porttitor in turpis ornare venenatis. Cras vel nunc quis massa tristique consectetur. Vestibulum");
+        deleteTestFile(dataFiles);
+    }
+
+    @Test
+    public void decryptValidCDOC11_RSA_withSingleFile_duplicateFilename_customCDOCFileSystemExceptionHandler_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+        File initialFile = new File("target/testdata/lorem2.txt");
+        initialFile.createNewFile();
+        CDOCFileSystemHandler cdocFileSystemHandler = new CDOCFileSystemHandler() {
+            @Override
+            public File handleExistingFileIssue(File file) {
+                return new File("target/testdata/lorem1.txt");
+            }
+        };
+
+        List<File> dataFiles = new CDOCDecrypter()
+                .withToken(token)
+                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc"))
+                .withCDOCFileSystemHandler(cdocFileSystemHandler)
+                .decrypt(new File("target/testdata"));
+
+        assertFileDataFileContent(dataFiles.get(0), "lorem1.txt", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce felis urna, consequat vel eros vel, ornare aliquet ante. Integer justo dolor, egestas nec mi vitae, semper consectetur odio. Morbi sagittis egestas leo, vel molestie ligula condimentum vitae. Aliquam porttitor in turpis ornare venenatis. Cras vel nunc quis massa tristique consectetur. Vestibulum");
+        List<File> deletableDataFiles = new ArrayList<>();
+        deletableDataFiles.add(initialFile);
+        deletableDataFiles.addAll(dataFiles);
+        deleteTestFile(deletableDataFiles);
+
+    }
+
+    @Test
     public void decryptValidCDOC11_RSA_withDDOCContaining2Files_shouldSucceed() throws Exception {
         PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
 
@@ -71,6 +117,48 @@ public class CDOC11DecrypterTest {
         assertSame(2, dataFiles.size());
         assertDataFileContent(dataFiles.get(0), "lorem1.txt", "lorem ipsum");
         assertDataFileContent(dataFiles.get(1), "lorem2.txt", "Lorem ipsum dolor sit amet");
+    }
+
+    @Test
+    public void decryptValidCDOC11_RSA_withDDOCContaining2Files_duplicateFilename_customCDOCFileSystemExceptionHandler_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+        File initialFile = new File("target/testdata/lorem2.txt");
+        initialFile.createNewFile();
+        CDOCFileSystemHandler cdocFileSystemHandler = new CDOCFileSystemHandler() {
+
+            @Override
+            public File handleExistingFileIssue(File file) {
+                return new File("target/testdata/lorem3.txt");
+            }
+        };
+        List<File> dataFiles = new CDOCDecrypter()
+                .withToken(token)
+                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA_withDDOC.cdoc"))
+                .withCDOCFileSystemHandler(cdocFileSystemHandler)
+                .decrypt(new File("target/testdata"));
+
+        assertFileDataFileContent(dataFiles.get(0), "lorem1.txt", "lorem ipsum");
+        assertFileDataFileContent(dataFiles.get(1), "lorem3.txt", "Lorem ipsum dolor sit amet");
+        List<File> deletableDataFiles = new ArrayList<>();
+        deletableDataFiles.add(initialFile);
+        deletableDataFiles.addAll(dataFiles);
+        deleteTestFile(deletableDataFiles);
+    }
+
+    @Test
+    public void decryptValidCDOC11_RSA_withDDOCContaining2Files_duplicateFilename_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+        File initialFile = new File("target/testdata/lorem2.txt");
+        initialFile.createNewFile();
+
+        List<File> dataFiles = new CDOCDecrypter()
+                .withToken(token)
+                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA_withDDOC.cdoc"))
+                .decrypt(new File("target/testdata"));
+
+        assertFileDataFileContent(dataFiles.get(0), "lorem1.txt", "lorem ipsum");
+        assertFileDataFileContent(dataFiles.get(1), "lorem2.txt", "Lorem ipsum dolor sit amet");
+        deleteTestFile(dataFiles);
     }
 
     @Test

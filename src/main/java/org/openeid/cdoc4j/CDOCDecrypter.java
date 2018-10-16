@@ -8,10 +8,7 @@ import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.openeid.cdoc4j.exception.CDOCException;
-import org.openeid.cdoc4j.exception.DecryptionException;
-import org.openeid.cdoc4j.exception.RecipientCertificateException;
-import org.openeid.cdoc4j.exception.RecipientMissingException;
+import org.openeid.cdoc4j.exception.*;
 import org.openeid.cdoc4j.token.Token;
 import org.openeid.cdoc4j.xml.XmlEncParser;
 import org.openeid.cdoc4j.xml.XmlEncParserFactory;
@@ -39,6 +36,7 @@ import java.security.spec.EllipticCurve;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Class for decrypting CDOC documents (supports 1.0 and 1.1)
@@ -51,6 +49,7 @@ import java.util.List;
  *   List<File> dataFiles = new CDOCDecrypter() <br/>
  *   &nbsp;&nbsp;.withToken(token) <br/>
  *   &nbsp;&nbsp;.withCDOC(new File("/path/to/cdoc")) <br/>
+ *   &nbsp;&nbsp;.withCDOCFileSystemHandler(new CustomCDOCFileSystemHandler()) <br/>
  *   &nbsp;&nbsp;.decrypt(new File("path/to/target/directory")); <br/>
  * </code></p>
  * <p>
@@ -61,6 +60,7 @@ import java.util.List;
  *   List<File> dataFiles = new CDOCDecrypter() <br/>
  *   &nbsp;&nbsp;.withToken(token) <br/>
  *   &nbsp;&nbsp;.withCDOC(new File("/path/to/cdoc")) <br/>
+ *   &nbsp;&nbsp;.withCDOCFileSystemHandler(new CustomCDOCFileSystemHandler()) <br/>
  *   &nbsp;&nbsp;.decrypt(new File("path/to/target/directory")); <br/>
  * </code></p>
  */
@@ -75,6 +75,7 @@ public class CDOCDecrypter {
     private Token token;
     private InputStream cdocInputStream;
     private File destinationDirectory;
+    private CDOCFileSystemHandler cdocFileSystemHandler;
 
     /**
      * Sets the decryption token
@@ -106,6 +107,17 @@ public class CDOCDecrypter {
      */
     public CDOCDecrypter withCDOC(File file) throws FileNotFoundException {
         this.cdocInputStream = new FileInputStream(file);
+        return this;
+    }
+
+    /**
+     * Sets the decryption cdocFileSystemHandler
+     *
+     * @param cdocFileSystemHandler implementation of {@link CDOCFileSystemHandler} used for handle file creation issues
+     * @return the current instance
+     */
+    public CDOCDecrypter withCDOCFileSystemHandler(CDOCFileSystemHandler cdocFileSystemHandler) {
+        this.cdocFileSystemHandler = cdocFileSystemHandler;
         return this;
     }
 
@@ -181,7 +193,7 @@ public class CDOCDecrypter {
 
             List<File> dataFiles;
             if (encryptedPayloadIsDDOC(mimeType)) {
-                dataFiles = xmlParser.parseAndDecryptDDOCPayload(encryptionMethod, key, destinationDirectory);
+                dataFiles = xmlParser.parseAndDecryptDDOCPayload(encryptionMethod, key, destinationDirectory, cdocFileSystemHandler);
             } else {
                 File dataFile = parseAndDecryptPayloadToFile(xmlParser, encryptionMethod, key);
                 dataFiles = Collections.singletonList(dataFile);
@@ -214,7 +226,7 @@ public class CDOCDecrypter {
 
     protected SecretKey decryptKey(Recipient recipient, Token token) throws CDOCException {
         if (recipient instanceof RSARecipient) {
-            return decryptRsaKey((RSARecipient) recipient,token);
+            return decryptRsaKey((RSARecipient) recipient, token);
         } else if (recipient instanceof ECRecipient) {
             return decryptECKey((ECRecipient) recipient, token);
         } else {
@@ -311,13 +323,23 @@ public class CDOCDecrypter {
     }
 
     private File parseAndDecryptPayloadToFile(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
-        File file = new File(destinationDirectory.getPath(), "TEMP_FILE_NAME.txt");
+        String uuidFileName = UUID.randomUUID().toString() + "cdoc.decrypt.tmp";
+        File file = new File(destinationDirectory.getPath(), uuidFileName);
         try (FileOutputStream output = new FileOutputStream(file)) {
             xmlParser.parseAndDecryptEncryptedDataPayload(output, encryptionMethod, key);
             String originalFileName = xmlParser.getOriginalFileName();
             output.close();
             File originalFile = new File(destinationDirectory.getPath(), originalFileName);
+
+            if (originalFile.exists()) {
+                LOGGER.warn("File {} already exists. Using CDOCFileSystemHandler", originalFile);
+                if (cdocFileSystemHandler == null) {
+                    cdocFileSystemHandler = new DefaultCDOCFileSystemHandler();
+                }
+                originalFile = cdocFileSystemHandler.handleExistingFileIssue(originalFile);
+            }
             file.renameTo(originalFile);
+            file.delete();
             return originalFile;
         } catch (IOException e) {
             throw new IllegalStateException("Failed to construct file output stream", e);
@@ -332,4 +354,5 @@ public class CDOCDecrypter {
             return outputStream.toByteArray();
         }
     }
+
 }
