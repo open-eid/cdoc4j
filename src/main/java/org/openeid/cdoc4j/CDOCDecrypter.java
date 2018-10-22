@@ -2,13 +2,15 @@ package org.openeid.cdoc4j;
 
 import com.ctc.wstx.stax.WstxInputFactory;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.openeid.cdoc4j.exception.*;
+import org.openeid.cdoc4j.exception.CDOCException;
+import org.openeid.cdoc4j.exception.DecryptionException;
+import org.openeid.cdoc4j.exception.RecipientCertificateException;
+import org.openeid.cdoc4j.exception.RecipientMissingException;
 import org.openeid.cdoc4j.token.Token;
 import org.openeid.cdoc4j.xml.XmlEncParser;
 import org.openeid.cdoc4j.xml.XmlEncParserFactory;
@@ -135,7 +137,22 @@ public class CDOCDecrypter {
                 throw new DecryptionException("File path must be an directory!");
             }
             this.destinationDirectory = destinationDirectory;
-            return decryptCdoc();
+            List<DataFile> dataFiles = decryptCdoc(FileInputStream.class);
+            List<File> files = new ArrayList<>();
+            for (DataFile dataFile : dataFiles) {
+                byte[] buffer = new byte[(int) dataFile.getSize()];
+                InputStream inputStream = dataFile.getContent();
+                inputStream.read(buffer);
+                inputStream.close();
+                File file = new File(destinationDirectory.getPath(), dataFile.getName());
+                try (OutputStream outStream = new FileOutputStream(file)) {
+                    outStream.write(buffer);
+                }
+                files.add(file);
+            }
+            return files;
+        } catch (IOException e) {
+            throw new CDOCException("Failed to read dataFile input stream");
         } finally {
             IOUtils.closeQuietly(cdocInputStream);
         }
@@ -148,30 +165,20 @@ public class CDOCDecrypter {
      * @throws CDOCException when there's an error decrypting datafile(s) from the given CDOC document
      */
     public List<DataFile> decrypt() throws CDOCException {
-        List<DataFile> dataFiles = new ArrayList<>();
-        try {
-            this.destinationDirectory = new File(System.getProperty("java.io.tmpdir"));
-            List<File> decryptedFiles = decryptCdoc();
-            for (File file : decryptedFiles) {
-                InputStream inputStream = new ByteArrayInputStream(FileUtils.readFileToByteArray(file));
-                file.delete();
-                DataFile dataFile = new DataFile(file.getName(), inputStream, inputStream.available(), "application/octet-stream");
-                dataFiles.add(dataFile);
-            }
-            return dataFiles;
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to construct file input stream", e);
+        List<DataFile> dataFiles = decryptCdoc(ByteArrayInputStream.class);
+        for (DataFile dataFile : dataFiles) {
+            dataFile.setMimeType("application/octet-stream");
         }
-
+        return dataFiles;
     }
 
     /**
-     * decrypts the CDOC payload and returns a list of decrypted file(s)
+     * decrypts the CDOC payload and returns a list of decrypted data file(s)
      *
      * @throws CDOCException when there's an error decrypting file(s) from the given CDOC document
-     * @return list of decrypted file(s)
+     * @return list of decrypted data file(s)
      */
-    private List<File> decryptCdoc() throws CDOCException {
+    private List<DataFile> decryptCdoc(final Class<? extends InputStream> inputStreamClass) throws CDOCException {
         LOGGER.info("Start decrypting payload from CDOC");
         validateParameters();
 
@@ -191,11 +198,16 @@ public class CDOCDecrypter {
             Recipient recipient = chooseRecipient(xmlParser.getRecipients());
             SecretKey key = decryptKey(recipient, token);
 
-            List<File> dataFiles;
+            List<DataFile> dataFiles;
             if (encryptedPayloadIsDDOC(mimeType)) {
-                dataFiles = xmlParser.parseAndDecryptDDOCPayload(encryptionMethod, key, destinationDirectory, cdocFileSystemHandler);
+                dataFiles = xmlParser.parseAndDecryptDDOCPayload(encryptionMethod, key, destinationDirectory, cdocFileSystemHandler, inputStreamClass);
             } else {
-                File dataFile = parseAndDecryptPayloadToFile(xmlParser, encryptionMethod, key);
+                DataFile dataFile;
+                if (inputStreamClass == ByteArrayInputStream.class) {
+                    dataFile = parseAndDecryptPayloadToMemory(xmlParser, encryptionMethod, key);
+                } else {
+                    dataFile = parseAndDecryptPayloadToFile(xmlParser, encryptionMethod, key);
+                }
                 dataFiles = Collections.singletonList(dataFile);
             }
             LOGGER.info("Payload decryption completed successfully!");
@@ -322,8 +334,8 @@ public class CDOCDecrypter {
         return mimeType.equals("http://www.sk.ee/DigiDoc/v1.3.0/digidoc.xsd");
     }
 
-    private File parseAndDecryptPayloadToFile(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
-        String uuidFileName = UUID.randomUUID().toString() + "cdoc.decrypt.tmp";
+    private DataFile parseAndDecryptPayloadToFile(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
+        String uuidFileName = UUID.randomUUID().toString() + ".cdoc.decrypt.tmp";
         File file = new File(destinationDirectory.getPath(), uuidFileName);
         try (FileOutputStream output = new FileOutputStream(file)) {
             xmlParser.parseAndDecryptEncryptedDataPayload(output, encryptionMethod, key);
@@ -340,10 +352,25 @@ public class CDOCDecrypter {
             }
             file.renameTo(originalFile);
             file.delete();
-            return originalFile;
+            return new DataFile(originalFile);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to construct file output stream", e);
         }
+    }
+
+    private DataFile parseAndDecryptPayloadToMemory(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
+        DataFile dataFile;
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+            xmlParser.parseAndDecryptEncryptedDataPayload(byteArrayOutputStream, encryptionMethod, key);
+            String originalFileName = xmlParser.getOriginalFileName();
+            InputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+            byteArrayOutputStream.flush();
+            byteArrayOutputStream.close();
+            dataFile = new DataFile(originalFileName, inputStream, inputStream.available());
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to create data file", e);
+        }
+        return dataFile;
     }
 
     private byte[] concatenate(byte[]... byteArrays) throws IOException {

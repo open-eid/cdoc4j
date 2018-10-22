@@ -7,10 +7,7 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Base64;
-import org.openeid.cdoc4j.CDOCFileSystemHandler;
-import org.openeid.cdoc4j.EncryptionMethod;
-import org.openeid.cdoc4j.RSARecipient;
-import org.openeid.cdoc4j.Recipient;
+import org.openeid.cdoc4j.*;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.stream.ClosableBase64OutputStream;
 import org.openeid.cdoc4j.stream.CustomOutputStreamWriter;
@@ -68,7 +65,7 @@ public class XmlEncParser {
         }
     }
 
-    public List<File> parseAndDecryptDDOCPayload(final EncryptionMethod encryptionMethod, final SecretKey key, final File destinationDirectory, final CDOCFileSystemHandler cdocFileSystemHandler) throws XmlParseException {
+    public List<DataFile> parseAndDecryptDDOCPayload(final EncryptionMethod encryptionMethod, final SecretKey key, final File destinationDirectory, final CDOCFileSystemHandler cdocFileSystemHandler, final Class<? extends InputStream> inputStreamClass) throws XmlParseException {
         try {
             try (final PipedInputStream pipedInputStream = new PipedInputStream();
                  PipedOutputStream pipedOutputStream = new PipedOutputStream()) {
@@ -78,7 +75,7 @@ public class XmlEncParser {
                 XmlEncParserUtil.goToElement(reader, "CipherValue");
 
                 Thread payloadDecryptionThread = formPayloadDecryptionThread(encryptionMethod, key, pipedOutputStream);
-                Callable<List<File>> ddocParserThread = formDDOCParserThread(destinationDirectory, pipedInputStream, cdocFileSystemHandler);
+                Callable<List<DataFile>> ddocParserThread = formDDOCParserThread(destinationDirectory, pipedInputStream, cdocFileSystemHandler, inputStreamClass);
 
                 try {
                     payloadDecryptionThread.start();
@@ -180,13 +177,14 @@ public class XmlEncParser {
         return Arrays.copyOfRange(base64EncodedAndEncryptedFilePrefix, 0, IVLength);
     }
 
-    private Callable<List<File>> formDDOCParserThread(final File destinationDirectory, final PipedInputStream pipedInputStream, final CDOCFileSystemHandler cdocFileSystemHandler) {
-        return new Callable<List<File>>() {
+    private Callable<List<DataFile>> formDDOCParserThread(final File destinationDirectory, final PipedInputStream pipedInputStream, final CDOCFileSystemHandler cdocFileSystemHandler, final Class<? extends InputStream> inputStreamClass) {
+        return new Callable<List<DataFile>>() {
                         @Override
-                        public List<File> call() throws XmlParseException {
+                        public List<DataFile> call() throws XmlParseException {
                             try {
                                 DDOCParser ddocParser = new DDOCParser(pipedInputStream, destinationDirectory, cdocFileSystemHandler);
-                                List<File> parsedDataFiles = ddocParser.parseDataFiles();
+                                List<DataFile> parsedDataFiles = ddocParser.parseDataFiles(inputStreamClass);
+
                                 ddocParser.close();
                                 pipedInputStream.close();
                                 return parsedDataFiles;

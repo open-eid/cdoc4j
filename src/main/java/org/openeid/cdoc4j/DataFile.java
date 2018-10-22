@@ -75,7 +75,16 @@ public class DataFile {
         return content;
     }
 
+    /**
+     * Returns file mime type. It is constant: "application/octet-stream"
+     *
+     * @return type
+     */
     public String getMimeType() {
         return mimeType;
+    }
+
+    void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
     }
 }

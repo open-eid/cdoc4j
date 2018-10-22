@@ -3,6 +3,7 @@ package org.openeid.cdoc4j.xml;
 import com.ctc.wstx.stax.WstxInputFactory;
 
 import org.openeid.cdoc4j.CDOCFileSystemHandler;
+import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.DefaultCDOCFileSystemHandler;
 import org.openeid.cdoc4j.stream.CustomOutputStreamWriter;
 import org.openeid.cdoc4j.stream.base64.Base64OutputStream;
@@ -14,10 +15,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,22 +36,28 @@ public class DDOCParser {
         this.fileDestinationDirectory = fileDestinationDirectory;
     }
 
-    public List<File> parseDataFiles() throws XmlParseException, XMLStreamException {
+    public List<DataFile> parseDataFiles(Class<? extends InputStream> inputStreamClass) throws XmlParseException, XMLStreamException {
 
         XmlEncParserUtil.goToElement(xmlReader, "SignedDoc");
 
-        List<File> dataFiles = new ArrayList<>();
+        List<DataFile> dataFiles = new ArrayList<>();
         while (XmlEncParserUtil.nextElementIs(xmlReader, "DataFile")) {
-            dataFiles.add(parseDataFile());
+            dataFiles.add(parseDataFile(inputStreamClass));
         }
-
         return dataFiles;
     }
 
-    private File parseDataFile() throws XmlParseException, XMLStreamException {
+    private DataFile parseDataFile(Class<? extends InputStream> inputStreamClass) throws XmlParseException, XMLStreamException {
+
         String fileName = XmlEncParserUtil.getAttributeValue(xmlReader, "Filename");
         try {
-            return parseDataFileAndSaveToFile(fileName);
+            if (inputStreamClass == ByteArrayInputStream.class) {
+                InputStream inputStream = parseDataFileAndSave();
+               return new DataFile(fileName, inputStream, inputStream.available());
+            } else {
+                File file = parseDataFileAndSave(fileName);
+                return new DataFile(file);
+            }
         } catch (IOException e) {
             String errorMessage = "Failed to parse DDOC data file named " + fileName;
             LOGGER.error(errorMessage, e);
@@ -61,7 +65,7 @@ public class DDOCParser {
         }
     }
 
-    private File parseDataFileAndSaveToFile(String fileName) throws XMLStreamException, IOException {
+    private File parseDataFileAndSave(String fileName) throws XMLStreamException, IOException {
         String filePath = fileDestinationDirectory.getPath() + "/" + fileName;
         File file = new File(filePath);
         if (file.exists()) {
@@ -82,7 +86,23 @@ public class DDOCParser {
         }
     }
 
+    private InputStream parseDataFileAndSave() throws XMLStreamException, IOException {
+
+        try (ByteArrayOutputStream fileDestination = new ByteArrayOutputStream();
+             Base64OutputStream base64DecodeStream = new Base64OutputStream(fileDestination, false);
+             CustomOutputStreamWriter outputWriter = new CustomOutputStreamWriter(base64DecodeStream)) {
+
+            XmlEncParserUtil.readCharacters(xmlReader, outputWriter, 1024);
+            outputWriter.flush();
+
+            InputStream inputStream = new ByteArrayInputStream(fileDestination.toByteArray());
+            fileDestination.close();
+            return inputStream;
+        }
+    }
+
     public void close() throws XMLStreamException {
         xmlReader.close();
     }
-} 
+
+}
