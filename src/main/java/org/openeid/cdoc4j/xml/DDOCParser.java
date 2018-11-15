@@ -73,7 +73,7 @@ public class DDOCParser {
             if (cdocFileSystemHandler == null) {
                 cdocFileSystemHandler = new DefaultCDOCFileSystemHandler();
             }
-            file = cdocFileSystemHandler.handleExistingFileIssue(file);
+            file = cdocFileSystemHandler.onFileExists(file);
         }
         try (FileOutputStream fileDestination = new FileOutputStream(file);
              Base64OutputStream base64DecodeStream = new Base64OutputStream(fileDestination, false);

@@ -72,7 +72,7 @@ public class CDOC11DecrypterTest {
         initialFile.createNewFile();
         CDOCFileSystemHandler cdocFileSystemHandler = new CDOCFileSystemHandler() {
             @Override
-            public File handleExistingFileIssue(File file) {
+            public File onFileExists(File file) {
                 return new File("target/testdata/lorem1.txt");
             }
         };
@@ -127,7 +127,7 @@ public class CDOC11DecrypterTest {
         CDOCFileSystemHandler cdocFileSystemHandler = new CDOCFileSystemHandler() {
 
             @Override
-            public File handleExistingFileIssue(File file) {
+            public File onFileExists(File file) {
                 return new File("target/testdata/lorem3.txt");
             }
         };

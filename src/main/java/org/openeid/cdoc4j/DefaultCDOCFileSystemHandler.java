@@ -10,10 +10,9 @@ public class DefaultCDOCFileSystemHandler implements CDOCFileSystemHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCDOCFileSystemHandler.class);
 
     @Override
-    public File handleExistingFileIssue(File file) {
-        LOGGER.info("Using default DefaultCDOCFileSystemHandler");
+    public File onFileExists(File file) {
         file.delete();
-        LOGGER.error("Deleting {} file", file);
+        LOGGER.warn("Deleting {} file due to new File naming conflict", file);
         return file;
     }
 }

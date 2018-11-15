@@ -13,6 +13,6 @@ public interface CDOCFileSystemHandler {
      * @param name of the file
      * @return file
      */
-    File handleExistingFileIssue(File file);
+    File onFileExists(File file);
 
 }

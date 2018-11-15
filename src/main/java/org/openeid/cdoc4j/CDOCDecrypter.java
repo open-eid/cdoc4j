@@ -344,11 +344,11 @@ public class CDOCDecrypter {
             File originalFile = new File(destinationDirectory.getPath(), originalFileName);
 
             if (originalFile.exists()) {
-                LOGGER.warn("File {} already exists. Using CDOCFileSystemHandler", originalFile);
                 if (cdocFileSystemHandler == null) {
                     cdocFileSystemHandler = new DefaultCDOCFileSystemHandler();
                 }
-                originalFile = cdocFileSystemHandler.handleExistingFileIssue(originalFile);
+                LOGGER.warn("File {} already exists. Using {}", originalFile, cdocFileSystemHandler.getClass().getName());
+                originalFile = cdocFileSystemHandler.onFileExists(originalFile);
             }
             file.renameTo(originalFile);
             file.delete();
