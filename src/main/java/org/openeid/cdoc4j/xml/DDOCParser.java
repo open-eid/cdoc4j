@@ -39,10 +39,17 @@ public class DDOCParser {
     public List<DataFile> parseDataFiles(Class<? extends InputStream> inputStreamClass) throws XmlParseException, XMLStreamException {
 
         XmlEncParserUtil.goToElement(xmlReader, "SignedDoc");
-
         List<DataFile> dataFiles = new ArrayList<>();
-        while (XmlEncParserUtil.nextElementIs(xmlReader, "DataFile")) {
-            dataFiles.add(parseDataFile(inputStreamClass));
+        try {
+            while (XmlEncParserUtil.nextElementIs(xmlReader, "DataFile")) {
+                dataFiles.add(parseDataFile(inputStreamClass));
+            }
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            if (inputStreamClass != ByteArrayInputStream.class) {
+                deleteDataFiles(dataFiles);
+            }
+            throw e;
         }
         return dataFiles;
     }
@@ -53,7 +60,7 @@ public class DDOCParser {
         try {
             if (inputStreamClass == ByteArrayInputStream.class) {
                 InputStream inputStream = parseDataFileAndSave();
-               return new DataFile(fileName, inputStream, inputStream.available());
+                return new DataFile(fileName, inputStream, inputStream.available());
             } else {
                 File file = parseDataFileAndSave(fileName);
                 return new DataFile(file);
@@ -103,6 +110,16 @@ public class DDOCParser {
 
     public void close() throws XMLStreamException {
         xmlReader.close();
+    }
+
+    private void deleteDataFiles(List<DataFile> dataFiles) {
+        for (DataFile dataFile : dataFiles) {
+            File file = new File(fileDestinationDirectory + "/" + dataFile.getName());
+            if (file.exists()) {
+                LOGGER.warn("Deleting data file: {}", file);
+                file.delete();
+            }
+        }
     }
 
 }

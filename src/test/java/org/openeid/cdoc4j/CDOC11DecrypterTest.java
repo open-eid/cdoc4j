@@ -3,6 +3,7 @@ package org.openeid.cdoc4j;
 import static org.junit.Assert.assertSame;
 import static org.openeid.cdoc4j.TestUtil.*;
 
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -63,6 +64,19 @@ public class CDOC11DecrypterTest {
 
         assertFileDataFileContent(dataFiles.get(0), "lorem2.txt", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce felis urna, consequat vel eros vel, ornare aliquet ante. Integer justo dolor, egestas nec mi vitae, semper consectetur odio. Morbi sagittis egestas leo, vel molestie ligula condimentum vitae. Aliquam porttitor in turpis ornare venenatis. Cras vel nunc quis massa tristique consectetur. Vestibulum");
         deleteTestFile(dataFiles);
+    }
+
+    @Test
+    public void decryptInvalidCDOC11_RSA_withMultipleFiles_shouldDeleteAllFiles() throws Exception {
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+        try {
+            new CDOCDecrypter()
+                    .withToken(token)
+                    .withCDOC(new FileInputStream("src/test/resources/cdoc/invalid_cdoc11_multiple_files.cdoc"))
+                    .decrypt(new File("target/testdata"));
+        } catch (Exception e) {
+            Assert.assertFalse(new File("target/testdata/test1.txt").exists());
+        }
     }
 
     @Test
