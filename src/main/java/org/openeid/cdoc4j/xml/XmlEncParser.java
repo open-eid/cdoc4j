@@ -65,7 +65,7 @@ public class XmlEncParser {
         }
     }
 
-    public List<DataFile> parseAndDecryptDDOCPayload(final EncryptionMethod encryptionMethod, final SecretKey key, final File destinationDirectory, final CDOCFileSystemHandler cdocFileSystemHandler, final Class<? extends InputStream> inputStreamClass) throws XmlParseException {
+    public List<DataFile> parseAndDecryptDDOCPayload(final EncryptionMethod encryptionMethod, final SecretKey key, final DDOCParser ddocParser) throws XmlParseException {
         try {
             try (final PipedInputStream pipedInputStream = new PipedInputStream();
                  PipedOutputStream pipedOutputStream = new PipedOutputStream()) {
@@ -75,7 +75,7 @@ public class XmlEncParser {
                 XmlEncParserUtil.goToElement(reader, "CipherValue");
 
                 Thread payloadDecryptionThread = formPayloadDecryptionThread(encryptionMethod, key, pipedOutputStream);
-                Callable<List<DataFile>> ddocParserThread = formDDOCParserThread(destinationDirectory, pipedInputStream, cdocFileSystemHandler, inputStreamClass);
+                Callable<List<DataFile>> ddocParserThread = formDDOCParserThread(pipedInputStream, ddocParser);
 
                 try {
                     payloadDecryptionThread.start();
@@ -177,14 +177,12 @@ public class XmlEncParser {
         return Arrays.copyOfRange(base64EncodedAndEncryptedFilePrefix, 0, IVLength);
     }
 
-    private Callable<List<DataFile>> formDDOCParserThread(final File destinationDirectory, final PipedInputStream pipedInputStream, final CDOCFileSystemHandler cdocFileSystemHandler, final Class<? extends InputStream> inputStreamClass) {
+    private Callable<List<DataFile>> formDDOCParserThread(final PipedInputStream pipedInputStream, final DDOCParser ddocParser) {
         return new Callable<List<DataFile>>() {
                         @Override
                         public List<DataFile> call() throws XmlParseException {
                             try {
-                                DDOCParser ddocParser = new DDOCParser(pipedInputStream, destinationDirectory, cdocFileSystemHandler);
-                                List<DataFile> parsedDataFiles = ddocParser.parseDataFiles(inputStreamClass);
-
+                                List<DataFile> parsedDataFiles = ddocParser.parseDataFiles(pipedInputStream);
                                 ddocParser.close();
                                 pipedInputStream.close();
                                 return parsedDataFiles;
