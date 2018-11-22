@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface PayloadParser {
 
-    List<DataFile> parseDDOC(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws XmlParseException;
+    List<DataFile> parseAndDecryptDDOC(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws XmlParseException;
 
-    List<DataFile> parsePayload(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException;
+    List<DataFile> parseAndDecryptPayload(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException;
 }

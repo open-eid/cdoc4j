@@ -189,9 +189,9 @@ public class CDOCDecrypter {
 
             List<DataFile> dataFiles;
             if (encryptedPayloadIsDDOC(mimeType)) {
-                dataFiles = payloadParser.parseDDOC(xmlParser, encryptionMethod, key);
+                dataFiles = payloadParser.parseAndDecryptDDOC(xmlParser, encryptionMethod, key);
             } else {
-                dataFiles = payloadParser.parsePayload(xmlParser, encryptionMethod, key);
+                dataFiles = payloadParser.parseAndDecryptPayload(xmlParser, encryptionMethod, key);
             }
             LOGGER.info("Payload decryption completed successfully!");
             return dataFiles;

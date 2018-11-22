@@ -18,13 +18,13 @@ import java.util.List;
 public class MemoryPayloadParser implements PayloadParser{
 
     @Override
-    public List<DataFile> parseDDOC(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws XmlParseException {
+    public List<DataFile> parseAndDecryptDDOC(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws XmlParseException {
         DDOCParser ddocParser = new MemoryDDOCParser();
         return xmlParser.parseAndDecryptDDOCPayload(encryptionMethod, key, ddocParser);
     }
 
     @Override
-    public List<DataFile> parsePayload(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
+    public List<DataFile> parseAndDecryptPayload(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
         return Collections.singletonList(parseAndDecryptPayloadToMemory(xmlParser, encryptionMethod, key));
     }
 
