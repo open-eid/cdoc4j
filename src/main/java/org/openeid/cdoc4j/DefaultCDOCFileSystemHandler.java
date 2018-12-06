@@ -11,8 +11,23 @@ public class DefaultCDOCFileSystemHandler implements CDOCFileSystemHandler {
 
     @Override
     public File onFileExists(File existingFile) {
-        existingFile.delete();
-        LOGGER.warn("Deleting {} file due to new file naming conflict", existingFile);
-        return existingFile;
+        String existingFileName = existingFile.getName();
+        int extensionIndex = existingFileName.lastIndexOf(".");
+        long index = 1;
+        while (true) {
+            String newFileName;
+            if (extensionIndex == -1) {
+                newFileName = existingFileName + "_" + index++;
+            } else {
+                newFileName = existingFileName.substring(0, extensionIndex) + "_" + index++ + existingFileName.substring(extensionIndex);
+            }
+            File newFile = new File(existingFile.getParentFile(), newFileName);
+            if (newFile.exists()) {
+                LOGGER.warn("File {} already exists", newFile.getAbsolutePath());
+            } else {
+                LOGGER.info("File saved as {}", newFile.getAbsolutePath());
+                return newFile;
+            }
+        }
     }
 }

@@ -1,5 +1,7 @@
 package org.openeid.cdoc4j;
 
+import org.apache.commons.io.IOUtils;
+
 import static org.junit.Assert.*;
 
 import java.io.File;
@@ -52,25 +54,36 @@ public class TestUtil {
         assertEquals("application/octet-stream", dataFile.getMimeType());
         assertStreamClosed(dataFile.getContent());
     }
-    public static void assertFileDataFileContent(File decryptedDataFile, String expectedFileName, String expectedContent) throws IOException {
-        assertFileDataFileContent(decryptedDataFile, expectedFileName, expectedContent.getBytes(StandardCharsets.UTF_8));
-    }
 
-    public static void assertFileDataFileContent(File decryptedDataFile, String expectedFileName, byte[] expectedContent) throws IOException {
+    public static void assertFileDataFileContent(File decryptedDataFile, String expectedFileName, String expectedContent) throws IOException {
+        byte[] expectedContentBytes = expectedContent.getBytes();
         assertEquals(expectedFileName, decryptedDataFile.getName());
-        assertEquals(expectedContent.length, decryptedDataFile.length());
+        assertEquals(expectedContentBytes.length, decryptedDataFile.length());
 
         try (FileInputStream decryptedDataFileContent = new FileInputStream(decryptedDataFile)) {
             byte[] decryptedFileContent = new byte[decryptedDataFileContent.available()];
             decryptedDataFileContent.read(decryptedFileContent);
-
-            assertTrue(Arrays.equals(expectedContent, decryptedFileContent));
+            assertTrue(Arrays.equals(expectedContentBytes, decryptedFileContent));
         }
     }
 
-    public static void deleteTestFile(List<File> dataFiles) {
+    public static void assertFileDataFileContent(DataFile decryptedDataFile, String expectedFileName, byte[] expectedContent) throws IOException {
+        assertEquals(expectedFileName, decryptedDataFile.getName());
+        assertEquals(expectedContent.length, decryptedDataFile.getContent().available());
+
+        byte[] decryptedFileContent = IOUtils.toByteArray(decryptedDataFile.getContent());
+        assertTrue(Arrays.equals(expectedContent, decryptedFileContent));
+    }
+
+    public static void deleteTestFiles(List<File> dataFiles) {
         for (File file : dataFiles) {
             file.delete();
+        }
+    }
+
+    public static void closeInMemoryStreams(List<DataFile> dataFiles) {
+        for (DataFile dataFile : dataFiles) {
+            IOUtils.closeQuietly(dataFile.getContent());
         }
     }
 }
