@@ -16,7 +16,7 @@ public class DefaultCDOCFileSystemHandler implements CDOCFileSystemHandler {
         long index = 1;
         while (true) {
             String newFileName;
-            if (extensionIndex == -1) {
+            if (extensionIndex < 1) {
                 newFileName = existingFileName + "_" + index++;
             } else {
                 newFileName = existingFileName.substring(0, extensionIndex) + "_" + index++ + existingFileName.substring(extensionIndex);
