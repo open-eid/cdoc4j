@@ -1,9 +1,10 @@
-package org.openeid.cdoc4j;
+package org.openeid.cdoc4j.xml;
 
+import org.openeid.cdoc4j.CDOCFileSystemHandler;
+import org.openeid.cdoc4j.DataFile;
+import org.openeid.cdoc4j.DefaultCDOCFileSystemHandler;
+import org.openeid.cdoc4j.EncryptionMethod;
 import org.openeid.cdoc4j.exception.CDOCException;
-import org.openeid.cdoc4j.xml.DDOCParser;
-import org.openeid.cdoc4j.xml.FileDDOCParser;
-import org.openeid.cdoc4j.xml.XmlEncParser;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,23 +43,23 @@ public class FilePayloadParser implements PayloadParser {
 
     private DataFile parseAndDecryptPayloadToFile(XmlEncParser xmlParser, EncryptionMethod encryptionMethod, SecretKey key) throws CDOCException {
         String uuidFileName = UUID.randomUUID().toString() + ".cdoc.decrypt.tmp";
-        File file = new File(destinationDirectory.getPath(), uuidFileName);
-        try (FileOutputStream output = new FileOutputStream(file)) {
+        File tempFile = new File(destinationDirectory.getPath(), uuidFileName);
+        try (FileOutputStream output = new FileOutputStream(tempFile)) {
             xmlParser.parseAndDecryptEncryptedDataPayload(output, encryptionMethod, key);
-            String originalFileName = xmlParser.getOriginalFileName();
+            String destinationFileName = xmlParser.getOriginalFileName();
             output.close();
-            File originalFile = new File(destinationDirectory.getPath(), originalFileName);
+            File destinationFile = new File(destinationDirectory.getPath(), destinationFileName);
 
-            if (originalFile.exists()) {
+            if (destinationFile.exists()) {
                 if (cdocFileSystemHandler == null) {
                     cdocFileSystemHandler = new DefaultCDOCFileSystemHandler();
                 }
-                LOGGER.warn("File {} already exists. Using {}", originalFile, cdocFileSystemHandler.getClass().getName());
-                originalFile = cdocFileSystemHandler.onFileExists(originalFile);
+                LOGGER.warn("File {} already exists. Using {}", destinationFile.getAbsolutePath(), cdocFileSystemHandler.getClass().getName());
+                destinationFile = cdocFileSystemHandler.onFileExists(destinationFile);
             }
-            file.renameTo(originalFile);
-            file.delete();
-            return new DataFile(originalFile);
+            tempFile.renameTo(destinationFile);
+            tempFile.delete();
+            return new DataFile(destinationFile);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to construct file output stream", e);
         }

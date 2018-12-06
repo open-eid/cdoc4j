@@ -1,5 +1,7 @@
-package org.openeid.cdoc4j;
+package org.openeid.cdoc4j.xml;
 
+import org.openeid.cdoc4j.DataFile;
+import org.openeid.cdoc4j.EncryptionMethod;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.xml.XmlEncParser;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;

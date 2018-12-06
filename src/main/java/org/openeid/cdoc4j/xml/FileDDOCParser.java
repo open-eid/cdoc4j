@@ -60,7 +60,7 @@ public class FileDDOCParser extends DDOCParser {
         String filePath = fileDestinationDirectory.getPath() + "/" + fileName;
         File file = new File(filePath);
         if (file.exists()) {
-            LOGGER.warn("File {} already exists. Using CDOCFileSystemHandler", file);
+            LOGGER.warn("File {} already exists. Using CDOCFileSystemHandler", file.getAbsolutePath());
             if (cdocFileSystemHandler == null) {
                 cdocFileSystemHandler = new DefaultCDOCFileSystemHandler();
             }

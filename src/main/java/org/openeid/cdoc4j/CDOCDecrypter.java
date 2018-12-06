@@ -12,9 +12,7 @@ import org.openeid.cdoc4j.exception.DecryptionException;
 import org.openeid.cdoc4j.exception.RecipientCertificateException;
 import org.openeid.cdoc4j.exception.RecipientMissingException;
 import org.openeid.cdoc4j.token.Token;
-import org.openeid.cdoc4j.xml.XmlEncParser;
-import org.openeid.cdoc4j.xml.XmlEncParserFactory;
-import org.openeid.cdoc4j.xml.XmlEncParserUtil;
+import org.openeid.cdoc4j.xml.*;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,6 +137,7 @@ public class CDOCDecrypter {
             for (DataFile dataFile : dataFiles) {
                 File file = new File(destinationDirectory.getPath(), dataFile.getName());
                 files.add(file);
+                IOUtils.closeQuietly(dataFile.getContent());
             }
             return files;
         } finally {
