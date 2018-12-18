@@ -291,6 +291,7 @@ public class XmlEncComposer {
     private void createDataFileElement(OutputStream cipherOutput, XMLStreamWriter innerWriter, int dataFileCounter) throws XMLStreamException, EncryptionException {
         DataFile dataFile = dataFiles.get(dataFileCounter);
         innerWriter.writeStartElement("DataFile");
+        innerWriter.writeDefaultNamespace("http://www.sk.ee/DigiDoc/v1.3.0#");
         innerWriter.writeAttribute("ContentType", "EMBEDDED_BASE64");
         innerWriter.writeAttribute("Filename", dataFile.getName());
         innerWriter.writeAttribute("Id", "D" + dataFileCounter);
@@ -326,7 +327,7 @@ public class XmlEncComposer {
         }
 
         createEncryptionPropertyElement("DocumentFormat", getEncDocXmlVersion());
-        createEncryptionPropertyElement("LibraryVersion", "cdoc4j|1.0");
+        createEncryptionPropertyElement("LibraryVersion", "cdoc4j|1.2");
 
         int fileCount = 0;
         for (DataFile dataFile : dataFiles) {

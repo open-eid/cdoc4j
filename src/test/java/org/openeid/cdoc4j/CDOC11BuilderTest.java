@@ -110,7 +110,7 @@ public class CDOC11BuilderTest {
                 .withRecipient(rsaAuthCertificate)
                 .buildToOutputStream(baos);
 
-        assertEquals(4382, baos.size());
+        assertEquals(4492, baos.size());
 
         for (DataFile dataFile : dataFiles) {
             assertStreamClosed(dataFile.getContent());
@@ -147,7 +147,7 @@ public class CDOC11BuilderTest {
                 .withRecipient(rsaAuthCertificate)
                 .buildToFile(destinationFile);
 
-        assertEquals(4382, destinationFile.length());
+        assertEquals(4492, destinationFile.length());
         for (DataFile dataFile : dataFiles) {
             assertStreamClosed(dataFile.getContent());
         }
@@ -169,7 +169,7 @@ public class CDOC11BuilderTest {
                     .withRecipient(rsaAuthCertificate)
                     .buildToOutputStream(output);
 
-            assertEquals(4382, output.size());
+            assertEquals(4492, output.size());
             for (DataFile dataFile : dataFiles) {
                 assertStreamClosed(dataFile.getContent());
             }

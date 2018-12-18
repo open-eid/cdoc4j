@@ -157,7 +157,6 @@ public class CDOC10DecrypterTest {
         }
     }
 
-    @Ignore("Needs investigation why it's failing")
     @Test
     public void buildAndDecryptCDOC10_RSA_fromMemory_toMemory_withDDOC_100times_shouldSucceed() throws Exception {
         for (String dataFileContent = "a"; dataFileContent.length() < 100; dataFileContent += 'a') {

@@ -122,7 +122,7 @@ public class CDOC10BuilderTest {
                 .withRecipient(certificateInputStream)
                 .buildToOutputStream(baos);
 
-        assertEquals(4387, baos.size());
+        assertEquals(4519, baos.size());
 
         for (DataFile dataFile : dataFiles) {
             assertStreamClosed(dataFile.getContent());
@@ -162,7 +162,7 @@ public class CDOC10BuilderTest {
                 .withRecipient(certificateInputStream)
                 .buildToFile(destinationFile);
 
-        assertEquals(4387, destinationFile.length());
+        assertEquals(4519, destinationFile.length());
         for (DataFile dataFile : dataFiles) {
             assertStreamClosed(dataFile.getContent());
         }
@@ -187,7 +187,7 @@ public class CDOC10BuilderTest {
                     .withRecipient(certificateInputStream)
                     .buildToOutputStream(output);
 
-            assertEquals(4387, output.size());
+            assertEquals(4519, output.size());
             for (DataFile dataFile : dataFiles) {
                 assertStreamClosed(dataFile.getContent());
             }
