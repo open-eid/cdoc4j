@@ -33,9 +33,7 @@ public class FileDDOCParser extends DDOCParser {
     @Override
     DataFile parseDataFile(String fileName, XMLStreamReader xmlReader) throws XMLStreamException, XmlParseException {
         try {
-            DataFile dataFile = new DataFile(parseDataFileAndSave(fileName, xmlReader));
-            IOUtils.closeQuietly(dataFile.getContent()); // The dataFile content is already written into file, no need for its inputstream
-            return dataFile;
+            return new DataFile(parseDataFileAndSave(fileName, xmlReader));
         } catch (IOException e) {
             String errorMessage = "Failed to parse DDOC data file named " + fileName;
             LOGGER.error(errorMessage, e);
@@ -54,6 +52,7 @@ public class FileDDOCParser extends DDOCParser {
             File file = new File(fileDestinationDirectory + "/" + dataFile.getName());
             if (file.exists()) {
                 LOGGER.warn("Deleting data file: {}", file);
+                IOUtils.closeQuietly(dataFile.getContent()); // close file inputstream before deletion
                 file.delete();
             }
         }
