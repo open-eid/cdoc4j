@@ -1,5 +1,6 @@
 package org.openeid.cdoc4j.xml;
 
+import org.apache.commons.io.IOUtils;
 import org.openeid.cdoc4j.CDOCFileSystemHandler;
 import org.openeid.cdoc4j.DataFile;
 import org.openeid.cdoc4j.DefaultCDOCFileSystemHandler;
@@ -32,7 +33,9 @@ public class FileDDOCParser extends DDOCParser {
     @Override
     DataFile parseDataFile(String fileName, XMLStreamReader xmlReader) throws XMLStreamException, XmlParseException {
         try {
-            return new DataFile(parseDataFileAndSave(fileName, xmlReader));
+            DataFile dataFile = new DataFile(parseDataFileAndSave(fileName, xmlReader));
+            IOUtils.closeQuietly(dataFile.getContent()); // The dataFile content is already written into file, no need for its inputstream
+            return dataFile;
         } catch (IOException e) {
             String errorMessage = "Failed to parse DDOC data file named " + fileName;
             LOGGER.error(errorMessage, e);

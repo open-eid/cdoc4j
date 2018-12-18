@@ -137,7 +137,6 @@ public class CDOCDecrypter {
             for (DataFile dataFile : dataFiles) {
                 File file = new File(destinationDirectory.getPath(), dataFile.getName());
                 files.add(file);
-                IOUtils.closeQuietly(dataFile.getContent());
             }
             return files;
         } finally {

@@ -25,7 +25,7 @@ public class DefaultCDOCFileSystemHandler implements CDOCFileSystemHandler {
             if (newFile.exists()) {
                 LOGGER.warn("File {} already exists", newFile.getAbsolutePath());
             } else {
-                LOGGER.info("File saved as {}", newFile.getAbsolutePath());
+                LOGGER.info("File will be saved as {}", newFile.getAbsolutePath());
                 return newFile;
             }
         }
