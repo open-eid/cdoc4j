@@ -6,3 +6,11 @@ branches:
   - develop
 install: true
 script: mvn clean verify -q
+notifications:
+  email:
+    recipients:
+    - andres.voll@nortal.com
+    - aare.nurm@nortal.com
+    - siim.suu@nortal.com
+    on_success: change
+    on_failure: always
