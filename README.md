@@ -3,6 +3,7 @@ Java library for working with CDOC documents.
 
 ## Origin
 This project started with the help of European Regional Development Fund.
+
 ![Euroopa Regionaalarengu Fond](reg_logo.png)
 
 ## Features
