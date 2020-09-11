@@ -1,6 +1,10 @@
 # cdoc4j
 Java library for working with CDOC documents.
 
+## Origin
+This project started with the help of European Regional Development Fund.
+![Euroopa Regionaalarengu Fond](https://www.struktuurifondid.ee/sites/default/files/el_regionaalarengu_fond_horisontaalne.jpg)
+
 ## Features
 * Creation of CDOC documents containing encrypted files
 * Decryption of files from CDOC documents
