@@ -6,6 +6,10 @@ This project started with the help of European Regional Development Fund.
 
 ![Euroopa Regionaalarengu Fond](reg_logo.png)
 
+# Build status
+
+[![Build Status](https://travis-ci.com/open-eid/cdoc4j.svg?branch=develop)](https://travis-ci.com/open-eid/cdoc4j)
+
 ## Features
 * Creation of CDOC documents containing encrypted files
 * Decryption of files from CDOC documents
