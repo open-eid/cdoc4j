@@ -14,7 +14,7 @@ on:
       - develop
 
 jobs:
-  digidoc4j_build:
+  cdoc4j_build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
