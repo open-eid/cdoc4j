@@ -8,7 +8,7 @@ This project started with the help of European Regional Development Fund.
 
 # Build status
 
-[![Build Status](https://travis-ci.com/open-eid/cdoc4j.svg?branch=develop)](https://travis-ci.com/open-eid/cdoc4j)
+![Build status](https://github.com/open-eid/cdoc4j/actions/workflows/cdoc4j-verify.yml/badge.svg?branch=master)
 
 ## Features
 * Creation of CDOC documents containing encrypted files
