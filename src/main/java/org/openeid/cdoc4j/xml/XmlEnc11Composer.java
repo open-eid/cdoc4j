@@ -58,7 +58,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
         } else if (certificate.getPublicKey() instanceof ECPublicKey) {
             createECRecipientEncryptedKey(certificate);
         } else {
-            String message = "Recipient's: " + certificate.getSubjectDN().getName() + " certificate contains unknown key algorithm: " + certificate.getPublicKey().getAlgorithm();
+            String message = "Recipient's: " + certificate.getSubjectX500Principal().getName() + " certificate contains unknown key algorithm: " + certificate.getPublicKey().getAlgorithm();
             LOGGER.error(message);
             throw new RecipientCertificateException(message);
         }
@@ -96,7 +96,7 @@ public class XmlEnc11Composer extends XmlEncComposer {
         try {
             partyVInfo = certificate.getEncoded();
         } catch (CertificateEncodingException e) {
-            String message = "Error encoding certificate: " + certificate.getSubjectDN().getName();
+            String message = "Error encoding certificate: " + certificate.getSubjectX500Principal().getName();
             LOGGER.error(message, e);
             throw new RecipientCertificateException(message, e);
         }

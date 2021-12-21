@@ -161,7 +161,7 @@ public class XmlEncComposer {
         try {
             writer.writeCharacters(Base64.toBase64String(certificate.getEncoded()));
         } catch (CertificateEncodingException e) {
-            String message = "Error encoding certificate: " + certificate.getSubjectDN().getName();
+            String message = "Error encoding certificate: " + certificate.getSubjectX500Principal().getName();
             LOGGER.error(message, e);
             throw new RecipientCertificateException(message, e);
         }

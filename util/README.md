@@ -10,7 +10,7 @@ Command line utility program which uses [cdoc4j](https://github.com/open-eid/cdo
 * **CDOC 1.1** - AES-256-GCM, RSA and EC recipients **(Recommended)**
 
 ## Requirements
-* Java 1.7 
+* Java 1.8
 * [Unlimited Strength Jurisdiction Policy](https://github.com/open-eid/cdoc4j/wiki/Enabling-Unlimited-Strength-Jurisdiction-Policy)
 
 ## How to use it

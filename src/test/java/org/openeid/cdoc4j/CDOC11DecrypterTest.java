@@ -22,8 +22,6 @@ public class CDOC11DecrypterTest {
 
     private final String version = "1.1";
     private final String testFileName = "test.txt";
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     @Test
     public void decryptValidCDOC11_RSA_withSingleFile_shouldSucceed() throws Exception {

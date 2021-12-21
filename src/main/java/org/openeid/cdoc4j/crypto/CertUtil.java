@@ -24,7 +24,7 @@ public class CertUtil {
             RDN cn = x500name.getRDNs(BCStyle.CN)[0];
             return cn.getFirst().getValue().toString();
         } catch (CertificateException e) {
-            String message = "Error extracting CN from certificate: " + certificate.getSubjectDN().getName();
+            String message = "Error extracting CN from certificate: " + certificate.getSubjectX500Principal().getName();
             LOGGER.error(message, e);
             throw new RecipientCertificateException(message, e);
         }
