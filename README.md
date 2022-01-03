@@ -32,6 +32,6 @@ You can use the library as a dependency from [Maven Central](http://mvnrepositor
 <dependency>
     <groupId>org.open-eid.cdoc4j</groupId>
     <artifactId>cdoc4j</artifactId>
-    <version>1.3</version>
+    <version>1.4</version>
 </dependency>
 ```
