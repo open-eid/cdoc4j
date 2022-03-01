@@ -1,15 +1,16 @@
 package org.openeid.cdoc4j;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.*;
 import static org.openeid.cdoc4j.TestUtil.*;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.openeid.cdoc4j.exception.CDOCException;
 import org.openeid.cdoc4j.exception.DecryptionException;
 import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
@@ -61,10 +62,41 @@ public class CDOC10DecrypterTest {
     }
 
     @Test
+    public void decrypt_withTokenAndSecretKeySupplier_shouldThrowException() {
+        DecryptionException exception = assertThrows(DecryptionException.class, () -> new CDOCDecrypter()
+          .withSecretKeySupplier(recipients -> new SecretKeySpec("".getBytes(UTF_8), "AES"))
+          .withToken(new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test"))
+          .decrypt(new File("target/testdata")));
+        assertEquals("Token and SecretKeySupplier can not be used together", exception.getMessage());
+    }
+
+    @Test
+    public void decrypt_withoutTokenAndSecretKeySupplier_shouldThrowException() {
+        DecryptionException exception = assertThrows(DecryptionException.class, () -> new CDOCDecrypter()
+          .decrypt(new File("target/testdata")));
+        assertEquals("Token or SecretKeySupplier used for decryption not set!", exception.getMessage());
+    }
+
+    @Test
     public void decryptValidCDOC10_withSingleFile_shouldSucceed() throws Exception {
         FileInputStream cdocInputStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10.cdoc");
         List<File> dataFiles = new CDOCDecrypter()
                 .withToken(new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test"))
+                .withCDOC(cdocInputStream)
+                .decrypt(new File("target/testdata"));
+
+        assertSame(1, dataFiles.size());
+        assertFileDataFileContent(dataFiles.get(0), testFileName, "lorem ipsum");
+        assertStreamClosed(cdocInputStream);
+        deleteTestFiles(dataFiles);
+    }
+
+    @Test
+    public void decryptValidCDOC10_RSA_toMemory_withRecipientSecretKeyResolver_shouldSucceed() throws Exception {
+        FileInputStream cdocInputStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10.cdoc");
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+        List<File> dataFiles = new CDOCDecrypter()
+                .withSecretKeySupplier(getSecretKeySupplier(token))
                 .withCDOC(cdocInputStream)
                 .decrypt(new File("target/testdata"));
 
@@ -272,7 +304,7 @@ public class CDOC10DecrypterTest {
                 .withToken(token)
                 .withCDOC(bais)
                 .decrypt();
-        
+
         assertTrue(decryptedDataFiles.size() == dataFiles.length);
         for (DataFile dataFile : dataFiles) {
             assertStreamClosed(dataFile.getContent());

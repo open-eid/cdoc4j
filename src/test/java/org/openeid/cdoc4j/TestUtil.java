@@ -1,9 +1,10 @@
 package org.openeid.cdoc4j;
 
 import org.apache.commons.io.IOUtils;
+import org.openeid.cdoc4j.exception.DecryptionException;
+import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
 
-import static org.junit.Assert.*;
-
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -12,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import static org.junit.Assert.*;
 
 public class TestUtil {
 
@@ -85,5 +88,17 @@ public class TestUtil {
         for (DataFile dataFile : dataFiles) {
             IOUtils.closeQuietly(dataFile.getContent());
         }
+    }
+
+    public static SecretKeySupplier getSecretKeySupplier(PKCS12Token token) {
+        return recipients -> {
+            try {
+                RSARecipient recipient = (RSARecipient) recipients.get(0);
+                return new SecretKeySpec(token.decrypt(recipient), recipient.getCertificate().getSigAlgName());
+            }
+            catch (DecryptionException e) {
+                throw new IllegalStateException("Unable to decrypt", e);
+            }
+        };
     }
 }

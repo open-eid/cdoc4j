@@ -73,6 +73,7 @@ public class CDOCDecrypter {
     private Token token;
     private InputStream cdocInputStream;
     private CDOCFileSystemHandler cdocFileSystemHandler;
+    private SecretKeySupplier secretKeySupplier;
 
     /**
      * Sets the decryption token
@@ -115,6 +116,17 @@ public class CDOCDecrypter {
      */
     public CDOCDecrypter withCDOCFileSystemHandler(CDOCFileSystemHandler cdocFileSystemHandler) {
         this.cdocFileSystemHandler = cdocFileSystemHandler;
+        return this;
+    }
+
+    /**
+     * Sets the secret key supplier
+     *
+     * @param secretKeySupplier for decrypting CDOC
+     * @return the current instance
+     */
+    public CDOCDecrypter withSecretKeySupplier(SecretKeySupplier secretKeySupplier) {
+        this.secretKeySupplier = secretKeySupplier;
         return this;
     }
 
@@ -183,8 +195,7 @@ public class CDOCDecrypter {
             String encryptionMethodUri = XmlEncParserUtil.getAttributeValue(xmlReader, "Algorithm");
             EncryptionMethod encryptionMethod = EncryptionMethod.fromURI(encryptionMethodUri);
             XmlEncParser xmlParser = XmlEncParserFactory.getXmlEncParser(encryptionMethod, xmlReader);
-            Recipient recipient = chooseRecipient(xmlParser.getRecipients());
-            SecretKey key = decryptKey(recipient, token);
+            SecretKey key = getSecretKey(xmlParser.getRecipients());
 
             List<DataFile> dataFiles;
             if (encryptedPayloadIsDDOC(mimeType)) {
@@ -208,9 +219,19 @@ public class CDOCDecrypter {
         }
     }
 
+    private SecretKey getSecretKey(List<Recipient> recipients) throws CDOCException {
+        return token == null
+               ? secretKeySupplier.get(recipients)
+               : decryptKey(chooseRecipient(recipients), token);
+    }
+
     private void validateParameters() throws DecryptionException {
-        if (token == null) {
-            throw new DecryptionException("Token used for decryption not set!");
+        if (token != null && secretKeySupplier != null) {
+            throw new DecryptionException("Token and SecretKeySupplier can not be used together");
+        }
+
+        if (token == null && secretKeySupplier == null) {
+            throw new DecryptionException("Token or SecretKeySupplier used for decryption not set!");
         }
 
         if (cdocInputStream == null) {
