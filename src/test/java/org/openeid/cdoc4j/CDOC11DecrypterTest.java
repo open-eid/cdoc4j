@@ -5,9 +5,7 @@ import static org.openeid.cdoc4j.TestUtil.*;
 
 import org.junit.Assert;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.openeid.cdoc4j.token.pkcs11.PKCS11Token;
 import org.openeid.cdoc4j.token.pkcs11.PKCS11TokenParams;
 import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
@@ -47,6 +45,21 @@ public class CDOC11DecrypterTest {
                 .decrypt();
         assertSame(1, dataFiles.size());
         assertDataFileContent(dataFiles.get(0), "lorem2.txt", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce felis urna, consequat vel eros vel, ornare aliquet ante. Integer justo dolor, egestas nec mi vitae, semper consectetur odio. Morbi sagittis egestas leo, vel molestie ligula condimentum vitae. Aliquam porttitor in turpis ornare venenatis. Cras vel nunc quis massa tristique consectetur. Vestibulum");
+    }
+
+    @Test
+    public void decryptValidCDOC11_RSA_toMemory_withRecipientSecretKeyResolver_shouldSucceed() throws Exception {
+        FileInputStream cdocInputStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc");
+        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+        List<File> dataFiles = new CDOCDecrypter()
+          .withSecretKeySupplier(getSecretKeySupplier(token))
+          .withCDOC(cdocInputStream)
+          .decrypt(new File("target/testdata"));
+
+        assertSame(1, dataFiles.size());
+        assertFileDataFileContent(dataFiles.get(0), "lorem2.txt", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce felis urna, consequat vel eros vel, ornare aliquet ante. Integer justo dolor, egestas nec mi vitae, semper consectetur odio. Morbi sagittis egestas leo, vel molestie ligula condimentum vitae. Aliquam porttitor in turpis ornare venenatis. Cras vel nunc quis massa tristique consectetur. Vestibulum");
+        assertStreamClosed(cdocInputStream);
+        deleteTestFiles(dataFiles);
     }
 
     @Test
