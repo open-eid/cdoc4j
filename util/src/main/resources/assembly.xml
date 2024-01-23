@@ -12,7 +12,7 @@
             <outputDirectory></outputDirectory>
             <includes>
                 <include>cdoc4j-util-*.jar</include>
-                <include>bcprov-jdk15on.jar</include>
+                <include>bcprov-jdk18on.jar</include>
             </includes>
         </fileSet>
     </fileSets>

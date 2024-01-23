@@ -1,35 +1,46 @@
 package org.openeid.cdoc4j;
 
-import static org.junit.Assert.assertSame;
-import static org.openeid.cdoc4j.TestUtil.*;
-
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.openeid.cdoc4j.token.pkcs11.PKCS11Token;
 import org.openeid.cdoc4j.token.pkcs11.PKCS11TokenParams;
 import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CDOC11DecrypterTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.openeid.cdoc4j.TestUtil.assertDataFileContent;
+import static org.openeid.cdoc4j.TestUtil.assertFileDataFileContent;
+import static org.openeid.cdoc4j.TestUtil.assertStreamClosed;
+import static org.openeid.cdoc4j.TestUtil.closeInMemoryStreams;
+import static org.openeid.cdoc4j.TestUtil.deleteTestFiles;
+import static org.openeid.cdoc4j.TestUtil.mockDataFile;
+
+class CDOC11DecrypterTest {
 
     private final String version = "1.1";
     private final String testFileName = "test.txt";
 
     @Test
-    public void decryptValidCDOC11_RSA_withSingleFile_shouldSucceed() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+    void decryptValidCDOC11_RSA_withSingleFile_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
 
         List<File> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc")))
                 .decrypt(new File("target/testdata"));
 
         assertSame(1, dataFiles.size());
@@ -38,39 +49,39 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void decryptValidCDOC11_RSA_toMemory_withSingleFile_shouldSucceed() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+    void decryptValidCDOC11_RSA_toMemory_withSingleFile_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
 
         List<DataFile> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc")))
                 .decrypt();
         assertSame(1, dataFiles.size());
         assertDataFileContent(dataFiles.get(0), "lorem2.txt", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce felis urna, consequat vel eros vel, ornare aliquet ante. Integer justo dolor, egestas nec mi vitae, semper consectetur odio. Morbi sagittis egestas leo, vel molestie ligula condimentum vitae. Aliquam porttitor in turpis ornare venenatis. Cras vel nunc quis massa tristique consectetur. Vestibulum");
     }
 
     @Test
-    public void decryptInvalidCDOC11_RSA_withMultipleFiles_shouldDeleteAllFiles() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+    void decryptInvalidCDOC11_RSA_withMultipleFiles_shouldDeleteAllFiles() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
         try {
             new CDOCDecrypter()
                     .withToken(token)
-                    .withCDOC(new FileInputStream("src/test/resources/cdoc/invalid_cdoc11_multiple_files.cdoc"))
+                    .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/invalid_cdoc11_multiple_files.cdoc")))
                     .decrypt(new File("target/testdata"));
         } catch (Exception e) {
-            Assert.assertFalse(new File("target/testdata/test1.txt").exists());
+            assertFalse(new File("target/testdata/test1.txt").exists());
         }
     }
 
     @Test
-    public void decryptValidCDOC11_RSA_withSingleFile_fileAlreadyExists_withDefaultCDOCFileSystemHandler() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+    void decryptValidCDOC11_RSA_withSingleFile_fileAlreadyExists_withDefaultCDOCFileSystemHandler() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
         File initialFile = new File("target/testdata/lorem2.txt");
         initialFile.createNewFile();
 
         List<File> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc")))
                 .decrypt(new File("target/testdata"));
 
         assertFileDataFileContent(dataFiles.get(0), "lorem2_1.txt", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce felis urna, consequat vel eros vel, ornare aliquet ante. Integer justo dolor, egestas nec mi vitae, semper consectetur odio. Morbi sagittis egestas leo, vel molestie ligula condimentum vitae. Aliquam porttitor in turpis ornare venenatis. Cras vel nunc quis massa tristique consectetur. Vestibulum");
@@ -81,8 +92,8 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void decryptValidCDOC11_RSA_withSingleFile_fileAlreadyExists_withCustomCDOCFileSystemHandler() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+    void decryptValidCDOC11_RSA_withSingleFile_fileAlreadyExists_withCustomCDOCFileSystemHandler() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
         File initialFile = new File("target/testdata/lorem2.txt");
         initialFile.createNewFile();
         CDOCFileSystemHandler cdocFileSystemHandler = new CDOCFileSystemHandler() {
@@ -95,7 +106,7 @@ public class CDOC11DecrypterTest {
 
         List<File> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_RSA.cdoc")))
                 .withCDOCFileSystemHandler(cdocFileSystemHandler)
                 .decrypt(new File("target/testdata"));
 
@@ -108,12 +119,12 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void decryptValidCDOC11_RSA_withDDOCContaining2Files_shouldSucceed() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+    void decryptValidCDOC11_RSA_withDDOCContaining2Files_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
 
         List<File> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA_withDDOC.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_RSA_withDDOC.cdoc")))
                 .decrypt(new File("target/testdata"));
 
         assertSame(2, dataFiles.size());
@@ -123,12 +134,12 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void decryptValidCDOC11_RSA_withDataFileResponse_withDDOCContaining2Files_shouldSucceed() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+    void decryptValidCDOC11_RSA_withDataFileResponse_withDDOCContaining2Files_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
 
         List<DataFile> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA_withDDOC.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_RSA_withDDOC.cdoc")))
                 .decrypt();
         assertSame(2, dataFiles.size());
         assertDataFileContent(dataFiles.get(0), "lorem1.txt", "lorem ipsum");
@@ -136,8 +147,8 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void decryptValidCDOC11_RSA_withDDOCContaining2Files_filesAlreadyExist_withDefaultCDOCFileSystemHandler() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+    void decryptValidCDOC11_RSA_withDDOCContaining2Files_filesAlreadyExist_withDefaultCDOCFileSystemHandler() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
         File initialFile = new File("target/testdata/lorem1.txt");
         File initialFile2 = new File("target/testdata/lorem2.txt");
         File initialFile3 = new File("target/testdata/lorem2_1.txt");
@@ -146,7 +157,7 @@ public class CDOC11DecrypterTest {
         initialFile3.createNewFile();
         List<File> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_RSA_withDDOC.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_RSA_withDDOC.cdoc")))
                 .decrypt(new File("target/testdata"));
 
         assertFileDataFileContent(dataFiles.get(0), "lorem1_1.txt", "lorem ipsum");
@@ -160,12 +171,12 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void decryptValidCDOC11_ECC_withSingleFile_shouldSucceed() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
+    void decryptValidCDOC11_ECC_withSingleFile_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/ecc/ecc.p12")), "test");
 
         List<File> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_ECC.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_ECC.cdoc")))
                 .decrypt(new File("target/testdata"));
 
         assertSame(1, dataFiles.size());
@@ -174,12 +185,12 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void decryptValidCDOC11_ECC_withDataFileResponse_withSingleFile_shouldSucceed() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
+    void decryptValidCDOC11_ECC_withDataFileResponse_withSingleFile_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/ecc/ecc.p12")), "test");
 
         List<DataFile> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_ECC.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_ECC.cdoc")))
                 .decrypt();
 
         assertSame(1, dataFiles.size());
@@ -187,12 +198,12 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void decryptValidCDOC11_ECC_withDDOCContaining2Files_shouldSucceed() throws Exception {
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
+    void decryptValidCDOC11_ECC_withDDOCContaining2Files_shouldSucceed() throws Exception {
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/ecc/ecc.p12")), "test");
 
         List<File> dataFiles = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(new FileInputStream("src/test/resources/cdoc/valid_cdoc11_ECC_withDDOC.cdoc"))
+                .withCDOC(Files.newInputStream(Paths.get("src/test/resources/cdoc/valid_cdoc11_ECC_withDDOC.cdoc")))
                 .decrypt(new File("target/testdata"));
 
         assertSame(2, dataFiles.size());
@@ -202,7 +213,7 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void buildAndDecryptCDOC11_RSA_toFile_withSingleFile_shouldSucceed() throws Exception {
+    void buildAndDecryptCDOC11_RSA_toFile_withSingleFile_shouldSucceed() throws Exception {
         String dataFileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
         DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
         InputStream certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
@@ -214,7 +225,7 @@ public class CDOC11DecrypterTest {
                 .buildToOutputStream(baos);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
         List<File> decryptedDataFiles = new CDOCDecrypter()
                 .withToken(token)
                 .withCDOC(bais)
@@ -230,7 +241,7 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void buildAndDecryptCDOC11_RSA_fromMemory_toMemory_withSingleFile_100times_shouldSucceed() throws Exception {
+    void buildAndDecryptCDOC11_RSA_fromMemory_toMemory_withSingleFile_100times_shouldSucceed() throws Exception {
         for (String dataFileContent = ""; dataFileContent.length() < 100; dataFileContent += 'a') {
             DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
             InputStream certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
@@ -242,7 +253,7 @@ public class CDOC11DecrypterTest {
                     .buildToOutputStream(baos);
 
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-            PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+            PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
             List<DataFile> decryptedDataFiles = new CDOCDecrypter()
                     .withToken(token)
                     .withCDOC(bais)
@@ -259,7 +270,7 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void buildAndDecryptCDOC11_RSA_withDDOC_100times_shouldSucceed() throws Exception {
+    void buildAndDecryptCDOC11_RSA_withDDOC_100times_shouldSucceed() throws Exception {
         for (String dataFileContent = ""; dataFileContent.length() < 100; dataFileContent += 'a') {
             DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
             InputStream certificateInputStream = getClass().getResourceAsStream("/rsa/auth_cert.pem");
@@ -273,7 +284,7 @@ public class CDOC11DecrypterTest {
                     .buildToOutputStream(baos);
 
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-            PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
+            PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
             List<DataFile> decryptedDataFiles = new CDOCDecrypter()
                     .withToken(token)
                     .withCDOC(bais)
@@ -290,7 +301,7 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void buildAndDecryptCDOC11_EC_withSingleFile_shouldSucceed() throws Exception {
+    void buildAndDecryptCDOC11_EC_withSingleFile_shouldSucceed() throws Exception {
         String dataFileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
         DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
         InputStream certificateInputStream = getClass().getResourceAsStream("/ecc/auth_cert.pem");
@@ -302,7 +313,7 @@ public class CDOC11DecrypterTest {
                 .buildToOutputStream(baos);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/ecc/ecc.p12")), "test");
         List<File> decryptedDataFiles = new CDOCDecrypter()
                 .withToken(token)
                 .withCDOC(bais)
@@ -318,7 +329,7 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void buildAndDecryptCDOC11_EC_fromMemory_toMemory_withDDOC_shouldSucceed() throws Exception {
+    void buildAndDecryptCDOC11_EC_fromMemory_toMemory_withDDOC_shouldSucceed() throws Exception {
         String dataFileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
         DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
         String dataFileContent2 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
@@ -334,7 +345,7 @@ public class CDOC11DecrypterTest {
                 .buildToOutputStream(baos);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/ecc/ecc.p12")), "test");
         List<DataFile> decryptedDataFiles = new CDOCDecrypter()
                 .withToken(token)
                 .withCDOC(bais)
@@ -351,7 +362,7 @@ public class CDOC11DecrypterTest {
     }
 
     @Test
-    public void buildAndDecryptCDOC11_withMultipleRecipients_shouldSucceed() throws Exception {
+    void buildAndDecryptCDOC11_withMultipleRecipients_shouldSucceed() throws Exception {
         String dataFileContent = "test CDOC 1.1 with multiple recipients";
         DataFile dataFile = new DataFile(testFileName, dataFileContent.getBytes(StandardCharsets.UTF_8));
 
@@ -363,7 +374,7 @@ public class CDOC11DecrypterTest {
                 .buildToOutputStream(baos);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/ecc/ecc.p12")), "test");
         List<DataFile> decryptedDataFiles = new CDOCDecrypter()
                 .withToken(token)
                 .withCDOC(bais)
@@ -374,20 +385,24 @@ public class CDOC11DecrypterTest {
         closeInMemoryStreams(decryptedDataFiles);
     }
 
-    @Test(expected = XmlParseException.class)
-    public void decryptCDOC11_withEntityExpansionAttack_shouldThrowException() throws Exception {
+    @Test
+    void decryptCDOC11_withEntityExpansionAttack_shouldThrowException() throws Exception {
         InputStream cdocInputStream = getClass().getResourceAsStream("/cdoc/1.0-XXE.cdoc");
-
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test");
-        new CDOCDecrypter()
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test");
+        CDOCDecrypter decrypter = new CDOCDecrypter()
                 .withToken(token)
-                .withCDOC(cdocInputStream)
-                .decrypt(new File("target/testdata"));
+                .withCDOC(cdocInputStream);
 
+        XmlParseException caughtException = assertThrows(
+                XmlParseException.class,
+                () -> decrypter.decrypt(new File("target/testdata"))
+        );
+
+        assertEquals("Error parsing original file name from CDOC", caughtException.getMessage());
     }
 
     @Test
-    public void buildAndDecryptCDOC11_emptyFile_shouldSucceed() throws Exception {
+    void buildAndDecryptCDOC11_emptyFile_shouldSucceed() throws Exception {
         File fileToWriteToCDOC = new File("src/test/resources/cdoc/empty_file.txt");
         DataFile dataFile = new DataFile(fileToWriteToCDOC);
 
@@ -398,7 +413,7 @@ public class CDOC11DecrypterTest {
                 .withRecipient(certificateInputStream)
                 .buildToOutputStream(baos);
 
-        PKCS12Token token = new PKCS12Token(new FileInputStream("src/test/resources/ecc/ecc.p12"), "test");
+        PKCS12Token token = new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/ecc/ecc.p12")), "test");
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         List<File> dataFiles = new CDOCDecrypter()
                 .withToken(token)
@@ -409,18 +424,24 @@ public class CDOC11DecrypterTest {
         deleteTestFiles(dataFiles);
     }
 
-    @Test(expected = XmlParseException.class)
-    public void decryptInvalidStructureCDOC11_shouldThrowException() throws Exception {
+    @Test
+    void decryptInvalidStructureCDOC11_shouldThrowException() throws Exception {
         FileInputStream cdocInputStream = new FileInputStream("src/test/resources/cdoc/invalid_cdoc11_structure.cdoc");
-        new CDOCDecrypter()
-                .withToken(new PKCS12Token(new FileInputStream("src/test/resources/rsa/rsa.p12"), "test"))
-                .withCDOC(cdocInputStream)
-                .decrypt(new File("target/testdata"));
+        CDOCDecrypter decrypter = new CDOCDecrypter()
+                .withToken(new PKCS12Token(Files.newInputStream(Paths.get("src/test/resources/rsa/rsa.p12")), "test"))
+                .withCDOC(cdocInputStream);
+
+        XmlParseException caughtException = assertThrows(
+                XmlParseException.class,
+                () -> decrypter.decrypt(new File("target/testdata"))
+        );
+
+        assertEquals("Error parsing recipient data from CDOC!", caughtException.getMessage());
     }
 
-    @Ignore("Requires SmartCard with its Reader to be connected to the machine")
+    @Disabled("Requires SmartCard with its Reader to be connected to the machine")
     @Test
-    public void buildAndDecryptCDOC_withPKCS11_shouldSucceed() throws Exception {
+    void buildAndDecryptCDOC_withPKCS11_shouldSucceed() throws Exception {
         String fileContent = "test CDOC 1.1 with PKCS#11";
         DataFile dataFile = new DataFile("test.txt", fileContent.getBytes());
 

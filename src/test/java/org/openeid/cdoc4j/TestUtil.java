@@ -2,22 +2,24 @@ package org.openeid.cdoc4j;
 
 import org.apache.commons.io.IOUtils;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestUtil {
 
     public static void assertStreamClosed(InputStream inputStream) {
         try {
-            assertTrue(inputStream.read() == -1);
+            assertEquals(-1, inputStream.read());
         } catch (IOException e) {
             assertTrue(e.getLocalizedMessage().equalsIgnoreCase("Stream closed"));
         }
@@ -44,7 +46,7 @@ public class TestUtil {
     }
 
     public static DataFile mockDataFile(byte[] dataContent) {
-        return new DataFile(UUID.randomUUID().toString() + "-test.txt", dataContent);
+        return new DataFile(UUID.randomUUID() + "-test.txt", dataContent);
     }
 
     public static void assertDataFileContent(DataFile dataFile, String expectedFileName, String expectedContent) throws IOException {
@@ -63,7 +65,7 @@ public class TestUtil {
         try (FileInputStream decryptedDataFileContent = new FileInputStream(decryptedDataFile)) {
             byte[] decryptedFileContent = new byte[decryptedDataFileContent.available()];
             decryptedDataFileContent.read(decryptedFileContent);
-            assertTrue(Arrays.equals(expectedContentBytes, decryptedFileContent));
+            assertArrayEquals(expectedContentBytes, decryptedFileContent);
         }
     }
 
@@ -72,7 +74,7 @@ public class TestUtil {
         assertEquals(expectedContent.length, decryptedDataFile.getContent().available());
 
         byte[] decryptedFileContent = IOUtils.toByteArray(decryptedDataFile.getContent());
-        assertTrue(Arrays.equals(expectedContent, decryptedFileContent));
+        assertArrayEquals(expectedContent, decryptedFileContent);
     }
 
     public static void deleteTestFiles(List<File> dataFiles) {

@@ -1,110 +1,131 @@
 package org.openeid.cdoc4j;
 
-import org.junit.Test;
-import org.openeid.cdoc4j.token.pkcs12.PKCS12Token;
+import org.junit.jupiter.api.Test;
 import org.openeid.cdoc4j.xml.exception.XmlParseException;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class CDOCParserTest {
+class CDOCParserTest {
 
     @Test
-    public void getDataFileNamesSuccessful_cdoc11_withOneDataFile() throws XmlParseException, FileNotFoundException {
+    void getDataFileNamesSuccessful_cdoc11_withOneDataFile() throws XmlParseException, FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc11_ECC.cdoc");
         List<String> dataFileNames = CDOCParser.getDataFileNames(cdocStream);
-        assertTrue(dataFileNames.size() == 1);
+        assertEquals(1, dataFileNames.size());
         assertEquals("lorem1.txt", dataFileNames.get(0));
     }
 
     @Test
-    public void getDataFileNamesSuccessful_cdoc11_withTwoDataFiles() throws XmlParseException, FileNotFoundException {
+    void getDataFileNamesSuccessful_cdoc11_withTwoDataFiles() throws XmlParseException, FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc11_ECC_withDDOC.cdoc");
         List<String> dataFileNames = CDOCParser.getDataFileNames(cdocStream);
-        assertTrue(dataFileNames.size() == 2);
+        assertEquals(2, dataFileNames.size());
         assertEquals("lorem1.txt", dataFileNames.get(0));
         assertEquals("lorem2.txt", dataFileNames.get(1));
     }
 
     @Test
-    public void getDataFileNamesSuccessful_cdoc10_withOneDataFile() throws XmlParseException, FileNotFoundException {
+    void getDataFileNamesSuccessful_cdoc10_withOneDataFile() throws XmlParseException, FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10.cdoc");
         List<String> dataFileNames = CDOCParser.getDataFileNames(cdocStream);
-        assertTrue(dataFileNames.size() == 1);
+        assertEquals(1, dataFileNames.size());
         assertEquals("test.txt", dataFileNames.get(0));
     }
 
     @Test
-    public void getDataFileNamesSuccessful_cdoc10_withTwoDataFiles() throws XmlParseException, FileNotFoundException {
+    void getDataFileNamesSuccessful_cdoc10_withTwoDataFiles() throws XmlParseException, FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10_withDDOC.cdoc");
         List<String> dataFileNames = CDOCParser.getDataFileNames(cdocStream);
-        assertTrue(dataFileNames.size() == 2);
+        assertEquals(2, dataFileNames.size());
         assertEquals("lorem1.txt", dataFileNames.get(0));
         assertEquals("lorem2.txt", dataFileNames.get(1));
     }
 
-    @Test(expected = XmlParseException.class)
-    public void getDataFileNames_withInvalidCDOCStructure_shouldThrowException() throws FileNotFoundException, XmlParseException {
+    @Test
+    void getDataFileNames_withInvalidCDOCStructure_shouldThrowException() throws FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/invalid_cdoc11_structure.cdoc");
-        CDOCParser.getDataFileNames(cdocStream);
-    }
 
-    @Test(expected = XmlParseException.class)
-    public void getDataFileNames_withEntityExpansionAttack_shouldThrowException() throws Exception {
-        InputStream cdocStream = getClass().getResourceAsStream("/cdoc/1.0-XXE.cdoc");
-        CDOCParser.getDataFileNames(cdocStream);
+        XmlParseException caughtException = assertThrows(
+                XmlParseException.class,
+                () -> CDOCParser.getDataFileNames(cdocStream)
+        );
 
+        assertEquals("Error parsing file names from CDOC", caughtException.getMessage());
     }
 
     @Test
-    public void getRecipients_cdoc10_withOneRecipient() throws XmlParseException, FileNotFoundException {
+    void getDataFileNames_withEntityExpansionAttack_shouldThrowException() {
+        InputStream cdocStream = getClass().getResourceAsStream("/cdoc/1.0-XXE.cdoc");
+
+        XmlParseException caughtException = assertThrows(
+                XmlParseException.class,
+                () -> CDOCParser.getDataFileNames(cdocStream)
+        );
+
+        assertEquals("Error parsing file names from CDOC", caughtException.getMessage());
+    }
+
+    @Test
+    void getRecipients_cdoc10_withOneRecipient() throws XmlParseException, FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10.cdoc");
         List<Recipient> recipients = CDOCParser.getRecipients(cdocStream);
-        assertTrue(recipients.size() == 1);
+        assertEquals(1, recipients.size());
         assertEquals("ŽÕRINÜWŠKY,MÄRÜ-LÖÖZ,11404176865", recipients.get(0).getCN());
     }
 
     @Test
-    public void getRecipients_cdoc10_withMultipleRecipients() throws XmlParseException, FileNotFoundException {
+    void getRecipients_cdoc10_withMultipleRecipients() throws XmlParseException, FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc10_withMultipleRecipients.cdoc");
         List<Recipient> recipients = CDOCParser.getRecipients(cdocStream);
-        assertTrue(recipients.size() == 2);
+        assertEquals(2, recipients.size());
         assertEquals("ŽÕRINÜWŠKY,MÄRÜ-LÖÖZ,11404176865", recipients.get(0).getCN());
         assertEquals("ŽÕRINÜWŠKY,MÄRÜ-LÖÖZ,11404176865", recipients.get(1).getCN());
     }
 
     @Test
-    public void getRecipients_cdoc11_withOneRecipient() throws XmlParseException, FileNotFoundException {
+    void getRecipients_cdoc11_withOneRecipient() throws XmlParseException, FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc11_ECC.cdoc");
         List<Recipient> recipients = CDOCParser.getRecipients(cdocStream);
-        assertTrue(recipients.size() == 1);
+        assertEquals(1, recipients.size());
         assertEquals("TESTNUMBER,ECC,14212128029", recipients.get(0).getCN());
     }
 
     @Test
-    public void getRecipients_cdoc11_withMultipleRecipients() throws XmlParseException, FileNotFoundException {
+    void getRecipients_cdoc11_withMultipleRecipients() throws XmlParseException, FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/valid_cdoc11_withMultipleRecipients.cdoc");
         List<Recipient> recipients = CDOCParser.getRecipients(cdocStream);
-        assertTrue(recipients.size() == 2);
+        assertEquals(2, recipients.size());
         assertEquals("TESTNUMBER,ECC,14212128029", recipients.get(0).getCN());
         assertEquals("ŽÕRINÜWŠKY,MÄRÜ-LÖÖZ,11404176865", recipients.get(1).getCN());
     }
 
-    @Test(expected = XmlParseException.class)
-    public void getRecipients__withInvalidCDOCStructure_shouldThrowException() throws FileNotFoundException, XmlParseException {
+    @Test
+    void getRecipients__withInvalidCDOCStructure_shouldThrowException() throws FileNotFoundException {
         FileInputStream cdocStream = new FileInputStream("src/test/resources/cdoc/invalid_cdoc11_structure.cdoc");
-        CDOCParser.getRecipients(cdocStream);
+
+        XmlParseException caughtException = assertThrows(
+                XmlParseException.class,
+                () -> CDOCParser.getRecipients(cdocStream)
+        );
+
+        assertEquals("Error parsing recipients from CDOC", caughtException.getMessage());
     }
 
-    @Test(expected = XmlParseException.class)
-    public void getRecipients_withEntityExpansionAttack_shouldThrowException() throws Exception {
+    @Test
+    void getRecipients_withEntityExpansionAttack_shouldThrowException() {
         InputStream cdocStream = getClass().getResourceAsStream("/cdoc/1.0-XXE.cdoc");
-        CDOCParser.getDataFileNames(cdocStream);
+
+        XmlParseException caughtException = assertThrows(
+                XmlParseException.class,
+                () -> CDOCParser.getDataFileNames(cdocStream)
+        );
+
+        assertEquals("Error parsing file names from CDOC", caughtException.getMessage());
     }
 }
