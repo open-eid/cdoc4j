@@ -10,7 +10,7 @@ import picocli.CommandLine.Option;
 import java.util.concurrent.Callable;
 
 @Command(
-    version = {"cdoc4j-util version: 1.4", "cdoc4j library version: 1.4"},
+    version = {"cdoc4j-util version: 1.5-SNAPSHOT", "cdoc4j library version: 1.5-SNAPSHOT"},
     name = "cdoc4j-util",
     header = "\r\ncdoc4j-util is a command line interface for cdoc4j library\r\n",
     customSynopsis = { "[encrypt|pkcs12-decrypt|pkcs11-decrypt] <arguments>" },
