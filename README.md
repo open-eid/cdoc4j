@@ -25,6 +25,12 @@ This project started with the help of European Regional Development Fund.
 ## How to use it
 Take a look at the [examples](https://github.com/open-eid/cdoc4j/wiki/Examples-of-how-to-use-it)
 
+## Decrypting a file using a smart card with Java version 17 or higher
+Using a smart card to decrypt a file while using Java 17 or a later version, an extra JVM argument is required:
+```bash
+--add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED
+```
+
 ## Maven Central
 You can use the library as a dependency from [Maven Central](http://mvnrepository.com/artifact/org.open-eid.cdoc4j/cdoc4j)
 

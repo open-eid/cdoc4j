@@ -35,6 +35,11 @@ java -jar cdoc4j-util-1.5-SNAPSHOT.jar encrypt -f path/to/file path/to/another/f
 java -jar cdoc4j-util-1.5-SNAPSHOT.jar pkcs11-decrypt -f /path/to/cdoc -d /path/to/pkcs11/driver -p [pin number] -s [slot] -o /path/to/output/directory/of/decrypted/file
 ```
 
+* **NB**: when decrypting a file using PKCS#11 with Java 17 or higher, an extra Java argument `--add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED` is required:
+```bash
+java --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED -jar cdoc4j-util-1.5-SNAPSHOT.jar pkcs11-decrypt -f /path/to/cdoc -d /path/to/pkcs11/driver -p [pin number] -s [slot] -o /path/to/output/directory/of/decrypted/file
+```
+
 * Example of decrypting a file with PKCS#12
 ```bash
 java -jar cdoc4j-util-1.5-SNAPSHOT.jar pkcs12-decrypt -f path/to/cdoc -k /path/to/p12/keystore -p [keystore password] -o /path/to/output/directory/of/decrypted/file
