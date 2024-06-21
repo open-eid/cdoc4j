@@ -1,7 +1,7 @@
 #!/bin/bash
 
 project="cdoc4j"
-version="1.5-SNAPSHOT"
+version="1.5"
 staging_url="https://oss.sonatype.org/service/local/staging/deploy/maven2/"
 repositoryId="ossrh"
 

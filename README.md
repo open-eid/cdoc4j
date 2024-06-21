@@ -38,6 +38,6 @@ You can use the library as a dependency from [Maven Central](http://mvnrepositor
 <dependency>
     <groupId>org.open-eid.cdoc4j</groupId>
     <artifactId>cdoc4j</artifactId>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.5</version>
 </dependency>
 ```

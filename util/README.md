@@ -17,30 +17,30 @@ Command line utility program which uses [cdoc4j](https://github.com/open-eid/cdo
 
 * To display usage help
 ```bash
-java -jar cdoc4j-util-1.5-SNAPSHOT.jar
+java -jar cdoc4j-util-1.5.jar
 ```
 
 * Example of encrypting file to a recipient
 ```bash
-java -jar cdoc4j-util-1.5-SNAPSHOT.jar encrypt -f path/to/desired/file/to/be/encrypted -r path/to/recipent/certificate -o /path/to/output/directory
+java -jar cdoc4j-util-1.5.jar encrypt -f path/to/desired/file/to/be/encrypted -r path/to/recipent/certificate -o /path/to/output/directory
 ```
 
 * Example of encrypting multiple files to multiple recipients
 ```bash
-java -jar cdoc4j-util-1.5-SNAPSHOT.jar encrypt -f path/to/file path/to/another/file -r path/to/recipent/certificate path/to/another/recipent/certificate -o /path/to/output/directory
+java -jar cdoc4j-util-1.5.jar encrypt -f path/to/file path/to/another/file -r path/to/recipent/certificate path/to/another/recipent/certificate -o /path/to/output/directory
 ```
 
 * Example of decrypting a file with PKCS#11
 ```bash
-java -jar cdoc4j-util-1.5-SNAPSHOT.jar pkcs11-decrypt -f /path/to/cdoc -d /path/to/pkcs11/driver -p [pin number] -s [slot] -o /path/to/output/directory/of/decrypted/file
+java -jar cdoc4j-util-1.5.jar pkcs11-decrypt -f /path/to/cdoc -d /path/to/pkcs11/driver -p [pin number] -s [slot] -o /path/to/output/directory/of/decrypted/file
 ```
 
 * **NB**: when decrypting a file using PKCS#11 with Java 17 or higher, an extra Java argument `--add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED` is required:
 ```bash
-java --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED -jar cdoc4j-util-1.5-SNAPSHOT.jar pkcs11-decrypt -f /path/to/cdoc -d /path/to/pkcs11/driver -p [pin number] -s [slot] -o /path/to/output/directory/of/decrypted/file
+java --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED -jar cdoc4j-util-1.5.jar pkcs11-decrypt -f /path/to/cdoc -d /path/to/pkcs11/driver -p [pin number] -s [slot] -o /path/to/output/directory/of/decrypted/file
 ```
 
 * Example of decrypting a file with PKCS#12
 ```bash
-java -jar cdoc4j-util-1.5-SNAPSHOT.jar pkcs12-decrypt -f path/to/cdoc -k /path/to/p12/keystore -p [keystore password] -o /path/to/output/directory/of/decrypted/file
+java -jar cdoc4j-util-1.5.jar pkcs12-decrypt -f path/to/cdoc -k /path/to/p12/keystore -p [keystore password] -o /path/to/output/directory/of/decrypted/file
 ```
