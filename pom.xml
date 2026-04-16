@@ -39,7 +39,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <language.level>1.8</language.level>
-        <bouncycastle.version>1.78.1</bouncycastle.version>
+        <bouncycastle.version>1.84</bouncycastle.version>
     </properties>
 
     <dependencies>
