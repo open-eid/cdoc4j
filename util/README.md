@@ -22,12 +22,12 @@ java -jar cdoc4j-util-1.5.jar
 
 * Example of encrypting file to a recipient
 ```bash
-java -jar cdoc4j-util-1.5.jar encrypt -f path/to/desired/file/to/be/encrypted -r path/to/recipent/certificate -o /path/to/output/directory
+java -jar cdoc4j-util-1.5.jar encrypt -f path/to/desired/file/to/be/encrypted -r path/to/recipent/certificate -o /path/to/output/file.cdoc
 ```
 
 * Example of encrypting multiple files to multiple recipients
 ```bash
-java -jar cdoc4j-util-1.5.jar encrypt -f path/to/file path/to/another/file -r path/to/recipent/certificate path/to/another/recipent/certificate -o /path/to/output/directory
+java -jar cdoc4j-util-1.5.jar encrypt -f path/to/file path/to/another/file -r path/to/recipent/certificate path/to/another/recipent/certificate -o /path/to/output/file.cdoc
 ```
 
 * Example of decrypting a file with PKCS#11
