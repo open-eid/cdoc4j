@@ -20,7 +20,7 @@
         <logback.version>1.3.16</logback.version>
         <picocli.version>4.7.7</picocli.version>
 
-        <maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
+        <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
         <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
@@ -123,20 +123,25 @@
             </plugin>
 
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-assembly-plugin.version}</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${maven-antrun-plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>assemble</id>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
+                        <id>ant-zip</id>
                         <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
                         <configuration>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <descriptors>
-                                <descriptor>src/main/resources/assembly.xml</descriptor>
-                            </descriptors>
+                            <target>
+                                <zip destfile="${project.build.directory}/${project.artifactId}-${project.version}.zip">
+                                    <fileset dir="${project.build.directory}">
+                                        <include name="${project.artifactId}-${project.version}.jar"/>
+                                        <include name="bcprov-jdk18on.jar"/>
+                                    </fileset>
+                                </zip>
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
