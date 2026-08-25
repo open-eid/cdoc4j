@@ -6,10 +6,6 @@ This project started with the help of European Regional Development Fund.
 
 ![Euroopa Regionaalarengu Fond](reg_logo.png)
 
-# Build status
-
-![Build status](https://github.com/open-eid/cdoc4j/actions/workflows/cdoc4j-verify.yml/badge.svg?branch=master)
-
 ## Features
 * Creation of CDOC documents containing encrypted files
 * Decryption of files from CDOC documents
