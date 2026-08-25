@@ -7,7 +7,7 @@
     <groupId>org.open-eid.cdoc4j</groupId>
     <artifactId>cdoc4j-util</artifactId>
     <packaging>jar</packaging>
-    <version>1.5</version>
+    <version>1.5.1</version>
     <name>Command line utility for cdoc4j</name>
 
     <properties>
@@ -16,7 +16,7 @@
         <language.level>1.8</language.level>
 
         <bouncycastle.version>1.85.2</bouncycastle.version>
-        <cdoc.version>1.5</cdoc.version>
+        <cdoc.version>1.5.1</cdoc.version>
         <logback.version>1.3.16</logback.version>
         <picocli.version>4.7.7</picocli.version>
 
