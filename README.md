@@ -1,5 +1,10 @@
 # cdoc4j
-Java library for working with CDOC documents.
+Java library for working with CDOC 1.0 and 1.1 documents.
+
+> [!IMPORTANT]
+> Cdoc4j library is reaching its end of life.
+> It is advised to migrate from old CDOC 1.0/1.1 format to new **CDOC 2.0** format and use corresponding implementation libraries.
+> More information about **CDOC 2.0** can be found at https://www.id.ee/en/article/cdoc-2-0/
 
 ## Origin
 This project started with the help of European Regional Development Fund.
